@@ -1,2 +1,2 @@
 # Obsidian
-Minecraft runner and manager with web UI
+Minecraft Bedrock Server runner and manager with web UI
