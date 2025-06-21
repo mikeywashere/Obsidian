@@ -17,6 +17,14 @@ namespace Obsidian
                 Process process = new Process();
                 process.StartInfo.WorkingDirectory = directory; // Assuming Obsidian is a .NET application
                 process.StartInfo.FileName = "obsidian"; // Assuming obsidian is in PATH or you can specify the full path
+                try
+                {
+                    process.Start();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to start the process: {ex.Message}");
+                }
             }
             else
             {
