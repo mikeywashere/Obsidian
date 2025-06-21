@@ -35,7 +35,8 @@ namespace Obsidian
             var client = factory.CreateClient();
             var response = await client.GetStreamAsync(Link);
             
-            response.CopyTo(managedStream);
+            await response.CopyToAsync(managedStream);
+            managedStream.Position = 0;
             return managedStream;
         }
 
