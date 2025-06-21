@@ -42,7 +42,9 @@ namespace Obsidian.UnitTests
             v.Count().ShouldBeGreaterThan(0);
             BedrockVersion bv = v.First() ?? throw new NullReferenceException();
             bv.ShouldNotBeNull();
-            await bv.ExtractToDirectoryAsync(Assembly.GetExecutingAssembly().Location);
+            var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDirectory);
+            await bv.ExtractToDirectoryAsync(tempDirectory);
         }
     }
 }
