@@ -29,6 +29,13 @@ public class Host()
     /// </remarks>
     public void Run(string directory)
     {
+        // Validate the input directory parameter
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            Console.WriteLine("The specified directory is invalid. Please provide a non-empty directory path.");
+            return;
+        }
+        
         // Verify that the target directory exists before attempting to run
         if (Directory.Exists(directory))
         {
