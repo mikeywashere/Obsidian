@@ -35,7 +35,7 @@ public class BedrockVersion(IHttpClientFactory factory)
 
     /// <summary>
     /// Gets or sets the version string of the Bedrock server.
-    /// Typically follows the format "major.minor.patch.build" (e.g., "1.20.30.2").
+    /// Typically follows the format "major.minor.patch" (e.g., "1.20.30"), but may occasionally include a fourth component for build numbers (e.g., "1.20.30.2").
     /// </summary>
     public string? Version { get; set; }
 
