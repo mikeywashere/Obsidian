@@ -14,16 +14,24 @@ namespace Obsidian
     /// </remarks>
     public class Bedrock : IBedrock
     {
-        /// <summary>Factory for creating HTTP clients used for download operations</summary>
+        /// <summary>
+        /// Factory for creating HTTP clients used for download operations
+        /// </summary>
         private IHttpClientFactory factory;
 
-        /// <summary>Target operating system platform for server downloads (Windows or Linux)</summary>
+        /// <summary>
+        /// Target operating system platform for server downloads (Windows or Linux)
+        /// </summary>
         private OSPlatform findPlatform;
 
-        /// <summary>Locale for the Minecraft download page (e.g., "en-us")</summary>
+        /// <summary>
+        /// Locale for the Minecraft download page (e.g., "en-us")
+        /// </summary>
         private string findLocale;
 
-        /// <summary>Whether to search for preview (beta) versions instead of stable releases</summary>
+        /// <summary>
+        /// Whether to search for preview (beta) versions instead of stable releases
+        /// </summary>
         private bool findPreview;
 
         /// <summary>
