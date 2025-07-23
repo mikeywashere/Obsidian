@@ -22,9 +22,9 @@ jobs:
       with:
         dotnet-version: 8.0.x
     
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
-        node-version: '14'
+        node-version: '18'
     
     - name: Install dependencies
       run: npm ci
@@ -33,7 +33,7 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Cache NuGet packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj') }}
