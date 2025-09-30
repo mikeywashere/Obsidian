@@ -110,7 +110,17 @@ public class UdpProxy : IUdpProxy
             _clientSockets[clientEndPoint] = clientSocket;
 
             // Start listening for responses from the server for this client
-            _ = Task.Run(async () => await ListenForServerResponseAsync(clientEndPoint, clientSocket));
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ListenForServerResponseAsync(clientEndPoint, clientSocket);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception in ListenForServerResponseAsync for {clientEndPoint}: {ex}");
+                }
+            });
         }
 
         // Forward the packet to the destination server
