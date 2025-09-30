@@ -243,6 +243,26 @@ namespace Obsidian
         public bool AllowInboundScriptDebugging { get; set; } = false;
 
         /// <summary>
+        /// Whether to enable UDP proxy for packet interception.
+        /// </summary>
+        public bool EnableUdpProxy { get; set; } = false;
+
+        /// <summary>
+        /// The port the UDP proxy should listen on.
+        /// </summary>
+        public int UdpProxyListenPort { get; set; } = 19134;
+
+        /// <summary>
+        /// The destination host to forward UDP packets to.
+        /// </summary>
+        public string UdpProxyDestinationHost { get; set; } = "127.0.0.1";
+
+        /// <summary>
+        /// The destination port to forward UDP packets to.
+        /// </summary>
+        public int UdpProxyDestinationPort { get; set; } = 19132;
+
+        /// <summary>
         /// Converts a string to the corresponding Difficulty enum value.
         /// </summary>
         /// <param name="value">The difficulty as a string (case-insensitive)</param>
@@ -364,6 +384,10 @@ namespace Obsidian
                     case "server-build-radius-ratio": properties.ServerBuildRadiusRatio = value; break;
                     case "allow-outbound-script-debugging": properties.AllowOutboundScriptDebugging = bool.Parse(value); break;
                     case "allow-inbound-script-debugging": properties.AllowInboundScriptDebugging = bool.Parse(value); break;
+                    case "enable-udp-proxy": properties.EnableUdpProxy = bool.Parse(value); break;
+                    case "udp-proxy-listen-port": properties.UdpProxyListenPort = int.Parse(value); break;
+                    case "udp-proxy-destination-host": properties.UdpProxyDestinationHost = value; break;
+                    case "udp-proxy-destination-port": properties.UdpProxyDestinationPort = int.Parse(value); break;
                 }
             }
             
@@ -414,7 +438,11 @@ namespace Obsidian
                 "disable-custom-skins=" + DisableCustomSkins.ToString().ToLower(),
                 "server-build-radius-ratio=" + ServerBuildRadiusRatio,
                 "allow-outbound-script-debugging=" + AllowOutboundScriptDebugging.ToString().ToLower(),
-                "allow-inbound-script-debugging=" + AllowInboundScriptDebugging.ToString().ToLower()
+                "allow-inbound-script-debugging=" + AllowInboundScriptDebugging.ToString().ToLower(),
+                "enable-udp-proxy=" + EnableUdpProxy.ToString().ToLower(),
+                "udp-proxy-listen-port=" + UdpProxyListenPort,
+                "udp-proxy-destination-host=" + UdpProxyDestinationHost,
+                "udp-proxy-destination-port=" + UdpProxyDestinationPort
             };
             
             File.WriteAllLines(filePath, lines);
