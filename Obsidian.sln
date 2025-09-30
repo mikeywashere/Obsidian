@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35919.96
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11018.127 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obsidian", "source\Obsidian\Obsidian.csproj", "{37B84949-B7E7-42AD-93F8-107FC134A53D}"
 EndProject
@@ -23,6 +23,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{B8EFCA5F-814F-285C-A8CB-F00F14650265}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obsidian.DataAccess", "source\Obsidian.DataAccess\Obsidian.DataAccess.csproj", "{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{632AEE44-5CB1-4A50-9093-1F0E19164E18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{37B84949-B7E7-42AD-93F8-107FC134A53D} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
+		{CABBADBD-89D2-44FB-B79F-B65407C2B31A} = {632AEE44-5CB1-4A50-9093-1F0E19164E18}
 		{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
