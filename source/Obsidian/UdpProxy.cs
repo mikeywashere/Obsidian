@@ -7,7 +7,7 @@ namespace Obsidian;
 /// A UDP proxy that intercepts, logs, and forwards UDP packets to a destination server.
 /// Designed for intercepting Minecraft Bedrock server UDP traffic.
 /// </summary>
-public class UdpProxy : IDisposable
+public class UdpProxy : IUdpProxy
 {
     private readonly UdpClient _listener;
     private readonly IPEndPoint _destinationEndPoint;
