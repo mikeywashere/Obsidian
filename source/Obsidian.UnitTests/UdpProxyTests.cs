@@ -41,8 +41,13 @@ public class UdpProxyTests
         var testData = Encoding.UTF8.GetBytes(testMessage);
         await client.SendAsync(testData, testData.Length, new IPEndPoint(IPAddress.Loopback, proxyListenPort));
 
-        // Wait for the destination to receive the packet
-        await Task.Delay(500);
+        // Wait for the destination to receive the packet (polling with timeout)
+        var timeout = TimeSpan.FromMilliseconds(500);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (!receivedFromDestination && sw.Elapsed < timeout)
+        {
+            await Task.Delay(10);
+        }
 
         // Assert
         receivedFromDestination.ShouldBeTrue();
