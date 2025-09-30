@@ -41,7 +41,19 @@ public class UdpProxy : IUdpProxy
     {
         _listenPort = listenPort;
         _listener = new UdpClient(listenPort);
-        _destinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(destinationHost)[0], destinationPort);
+        try
+        {
+            var addresses = Dns.GetHostAddresses(destinationHost);
+            if (addresses == null || addresses.Length == 0)
+            {
+                throw new ArgumentException($"Could not resolve destination host: {destinationHost}");
+            }
+            _destinationEndPoint = new IPEndPoint(addresses[0], destinationPort);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Failed to resolve destination host '{destinationHost}': {ex.Message}", ex);
+        }
         _clientSockets = new Dictionary<IPEndPoint, UdpClient>();
     }
 
