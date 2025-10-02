@@ -1,6 +1,8 @@
 @page "/servers/{ServerId}"
+@using Microsoft.AspNetCore.Authorization
 @using Obsidian.Web.Models
 @using Obsidian.Web.Services
+@attribute [Authorize]
 @inject IServerService ServerService
 @inject NavigationManager Navigation
 
