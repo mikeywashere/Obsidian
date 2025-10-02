@@ -4,8 +4,11 @@ Minecraft Bedrock Server runner and manager with web UI
 ## Features
 
 - **UDP Proxy**: Intercept and log Minecraft Bedrock UDP packets for debugging and analysis
-- Server management and configuration
-- Web UI for server administration
+- **Server Management**: Start, stop, and configure Minecraft Bedrock servers
+- **Web UI**: Modern Blazor WebAssembly interface for server administration
+- **Microsoft Authentication**: Secure access with Microsoft account login
+- **Real-time Monitoring**: View server status, player counts, and logs
+- **Log Viewer**: Intuitive log viewing with color-coded levels
 
 ## UDP Proxy
 
@@ -25,4 +28,27 @@ udp-proxy-destination-port=19132
 ```
 
 Then connect your Minecraft client to port 19134 instead of 19132 to have all traffic intercepted and logged.
+
+## Web UI
+
+The web UI provides a modern interface for managing your Minecraft Bedrock servers.
+
+### Quick Start
+
+```bash
+cd source/Obsidian.Web
+dotnet run
+```
+
+Navigate to `https://localhost:7223` or `http://localhost:5276`
+
+### Features
+
+- Microsoft account authentication
+- Server list with status indicators
+- Individual server details and controls
+- Real-time log viewer
+- Responsive flat design
+
+For detailed setup instructions including Microsoft authentication configuration, see [source/Obsidian.Web/README.md](source/Obsidian.Web/README.md).
 

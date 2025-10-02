@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{B8EFCA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obsidian.DataAccess", "source\Obsidian.DataAccess\Obsidian.DataAccess.csproj", "{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obsidian.Web", "source\Obsidian.Web\Obsidian.Web.csproj", "{582B6041-3365-4705-9A7A-9B24B98B3A5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,12 +72,25 @@ Global
 		{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9}.Release|x64.Build.0 = Release|Any CPU
 		{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9}.Release|x86.ActiveCfg = Release|Any CPU
 		{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9}.Release|x86.Build.0 = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|x64.Build.0 = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Debug|x86.Build.0 = Debug|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|x64.ActiveCfg = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|x64.Build.0 = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|x86.ActiveCfg = Release|Any CPU
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F8880CD7-73BD-4C28-ADCB-DCEEA6FDB3E9} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
+		{582B6041-3365-4705-9A7A-9B24B98B3A5E} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {062EF0B2-C8B9-4FC5-9AAF-7A3C1249ECC0}
