@@ -1,0 +1,154 @@
+@page "/servers/{ServerId}"
+@using Obsidian.Web.Models
+@using Obsidian.Web.Services
+@inject IServerService ServerService
+@inject NavigationManager Navigation
+
+<PageTitle>@(_server?.Name ?? "Server Details")</PageTitle>
+
+<div class="server-detail-container">
+    @if (_server == null)
+    {
+        <div class="loading">
+            <p>Loading server details...</p>
+        </div>
+    }
+    else
+    {
+        <div class="header">
+            <button class="btn btn-link" @onclick="GoBack">← Back to Servers</button>
+            <h1>@_server.Name</h1>
+            <span class="status-badge status-@_server.Status.ToString().ToLower()">
+                @_server.Status
+            </span>
+        </div>
+
+        <div class="detail-content">
+            <div class="info-panel">
+                <h2>Server Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Server ID:</span>
+                        <span class="value">@_server.Id</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Version:</span>
+                        <span class="value">@_server.Version</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Port:</span>
+                        <span class="value">@_server.Port</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Players:</span>
+                        <span class="value">@_server.CurrentPlayers / @_server.MaxPlayers</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Created:</span>
+                        <span class="value">@_server.CreatedDate.ToString("g")</span>
+                    </div>
+                    @if (_server.LastStarted.HasValue)
+                    {
+                        <div class="info-item">
+                            <span class="label">Last Started:</span>
+                            <span class="value">@_server.LastStarted.Value.ToString("g")</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="action-buttons">
+                    @if (_server.Status == ServerStatus.Stopped || _server.Status == ServerStatus.Error)
+                    {
+                        <button class="btn btn-success" @onclick="StartServer">Start Server</button>
+                    }
+                    @if (_server.Status == ServerStatus.Running)
+                    {
+                        <button class="btn btn-danger" @onclick="StopServer">Stop Server</button>
+                    }
+                    @if (_server.Status == ServerStatus.Starting || _server.Status == ServerStatus.Stopping)
+                    {
+                        <button class="btn btn-secondary" disabled>@_server.Status...</button>
+                    }
+                    <button class="btn btn-primary" @onclick="RefreshLogs">Refresh Logs</button>
+                </div>
+            </div>
+
+            <div class="log-panel">
+                <h2>Server Logs</h2>
+                <div class="log-viewer">
+                    @if (_logs == null)
+                    {
+                        <p>Loading logs...</p>
+                    }
+                    else if (!_logs.Any())
+                    {
+                        <p class="empty-logs">No logs available.</p>
+                    }
+                    else
+                    {
+                        @foreach (var log in _logs)
+                        {
+                            <div class="log-entry log-@log.Level.ToString().ToLower()">
+                                <span class="log-timestamp">[@log.Timestamp.ToString("HH:mm:ss")]</span>
+                                <span class="log-level">[@log.Level]</span>
+                                <span class="log-message">@log.Message</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string ServerId { get; set; } = string.Empty;
+
+    private ServerInfo? _server;
+    private List<ServerLog>? _logs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadServerDetails();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadServerDetails();
+    }
+
+    private async Task LoadServerDetails()
+    {
+        _server = await ServerService.GetServerAsync(ServerId);
+        if (_server != null)
+        {
+            _logs = await ServerService.GetServerLogsAsync(ServerId);
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/servers");
+    }
+
+    private async Task StartServer()
+    {
+        await ServerService.StartServerAsync(ServerId);
+        await LoadServerDetails();
+    }
+
+    private async Task StopServer()
+    {
+        await ServerService.StopServerAsync(ServerId);
+        await LoadServerDetails();
+    }
+
+    private async Task RefreshLogs()
+    {
+        if (_server != null)
+        {
+            _logs = await ServerService.GetServerLogsAsync(ServerId);
+        }
+    }
+}

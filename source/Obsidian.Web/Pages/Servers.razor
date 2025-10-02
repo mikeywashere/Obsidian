@@ -1,0 +1,116 @@
+@page "/servers"
+@using Obsidian.Web.Models
+@using Obsidian.Web.Services
+@inject IServerService ServerService
+@inject NavigationManager Navigation
+
+<PageTitle>Servers</PageTitle>
+
+<div class="servers-container">
+    <div class="header">
+        <h1>Minecraft Servers</h1>
+    </div>
+
+    @if (_servers == null)
+    {
+        <div class="loading">
+            <p>Loading servers...</p>
+        </div>
+    }
+    else if (!_servers.Any())
+    {
+        <div class="empty-state">
+            <p>No servers found.</p>
+        </div>
+    }
+    else
+    {
+        <div class="server-grid">
+            @foreach (var server in _servers)
+            {
+                <div class="server-card" @onclick="() => NavigateToServer(server.Id)">
+                    <div class="server-header">
+                        <h3>@server.Name</h3>
+                        <span class="status-badge status-@server.Status.ToString().ToLower()">
+                            @server.Status
+                        </span>
+                    </div>
+                    
+                    <div class="server-info">
+                        <div class="info-row">
+                            <span class="label">Version:</span>
+                            <span class="value">@server.Version</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Port:</span>
+                            <span class="value">@server.Port</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Players:</span>
+                            <span class="value">@server.CurrentPlayers / @server.MaxPlayers</span>
+                        </div>
+                        @if (server.LastStarted.HasValue)
+                        {
+                            <div class="info-row">
+                                <span class="label">Last Started:</span>
+                                <span class="value">@server.LastStarted.Value.ToString("g")</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="server-actions">
+                        @if (server.Status == ServerStatus.Stopped || server.Status == ServerStatus.Error)
+                        {
+                            <button class="btn btn-success" @onclick:stopPropagation="true" @onclick="() => StartServer(server.Id)">
+                                Start
+                            </button>
+                        }
+                        @if (server.Status == ServerStatus.Running)
+                        {
+                            <button class="btn btn-danger" @onclick:stopPropagation="true" @onclick="() => StopServer(server.Id)">
+                                Stop
+                            </button>
+                        }
+                        @if (server.Status == ServerStatus.Starting || server.Status == ServerStatus.Stopping)
+                        {
+                            <button class="btn btn-secondary" disabled>
+                                @server.Status...
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ServerInfo>? _servers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadServers();
+    }
+
+    private async Task LoadServers()
+    {
+        _servers = await ServerService.GetServersAsync();
+    }
+
+    private void NavigateToServer(string serverId)
+    {
+        Navigation.NavigateTo($"/servers/{serverId}");
+    }
+
+    private async Task StartServer(string serverId)
+    {
+        await ServerService.StartServerAsync(serverId);
+        await LoadServers();
+    }
+
+    private async Task StopServer(string serverId)
+    {
+        await ServerService.StopServerAsync(serverId);
+        await LoadServers();
+    }
+}
