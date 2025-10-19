@@ -1,0 +1,37 @@
+using Microsoft.EntityFrameworkCore;
+using Obsidian.DataAccess.Entities;
+
+namespace Obsidian.DataAccess;
+
+public class ObsidianDbContext : DbContext
+{
+    public ObsidianDbContext(DbContextOptions<ObsidianDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<ServerInfo> Servers { get; set; }
+    public DbSet<ServerLog> ServerLogs { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ServerInfo>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Version).HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<ServerLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ServerId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Message).IsRequired();
+            entity.Property(e => e.Level).HasConversion<string>();
+            entity.HasIndex(e => new { e.ServerId, e.Timestamp });
+        });
+    }
+}
