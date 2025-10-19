@@ -47,6 +47,56 @@ To enable Microsoft Authentication, you need to register an Azure AD application
 
 The application uses MSAL (Microsoft Authentication Library) for authentication. When authentication is not configured, the app will still work but won't enforce login requirements.
 
+### Role-Based Authorization
+
+The application supports three roles for access control:
+
+- **SystemAdmin**: Full system access including user management and system configuration
+- **Admin**: Server management and configuration access (can start/stop servers)
+- **User**: Basic access to view servers and logs (read-only)
+
+#### Configuring Roles in Azure AD
+
+To assign roles to users:
+
+1. In the Azure Portal, navigate to your App Registration
+2. Go to **App roles** > **Create app role**
+3. Create the following roles:
+
+**User Role:**
+- Display name: `User`
+- Allowed member types: `Users/Groups`
+- Value: `User`
+- Description: `Basic user with read-only access to servers and logs`
+
+**Admin Role:**
+- Display name: `Admin`
+- Allowed member types: `Users/Groups`
+- Value: `Admin`
+- Description: `Administrator with server management capabilities`
+
+**SystemAdmin Role:**
+- Display name: `SystemAdmin`
+- Allowed member types: `Users/Groups`
+- Value: `SystemAdmin`
+- Description: `System administrator with full access`
+
+4. Assign roles to users:
+   - Navigate to **Enterprise applications**
+   - Find and select your application
+   - Go to **Users and groups** > **Add user/group**
+   - Select users and assign them to the appropriate roles
+
+#### Authorization Policies
+
+The application uses three authorization policies:
+
+- `RequireUser`: Requires User, Admin, or SystemAdmin role
+- `RequireAdmin`: Requires Admin or SystemAdmin role
+- `RequireSystemAdmin`: Requires SystemAdmin role only
+
+Pages are protected with these policies using the `[Authorize(Policy = "...")]` attribute.
+
 ## Project Structure
 
 ```

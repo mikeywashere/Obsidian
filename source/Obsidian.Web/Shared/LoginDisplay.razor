@@ -1,11 +1,26 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Obsidian.Web.Authorization
 
 @inject NavigationManager Navigation
 
 <AuthorizeView>
     <Authorized>
-        <span class="user-info">Hello, @context.User.Identity?.Name!</span>
+        <span class="user-info">
+            Hello, @context.User.Identity?.Name!
+            @if (context.User.IsInRole(Roles.SystemAdmin))
+            {
+                <span class="role-badge system-admin">System Admin</span>
+            }
+            else if (context.User.IsInRole(Roles.Admin))
+            {
+                <span class="role-badge admin">Admin</span>
+            }
+            else if (context.User.IsInRole(Roles.User))
+            {
+                <span class="role-badge user">User</span>
+            }
+        </span>
         <a href="authentication/logout" class="logout-link">Log out</a>
     </Authorized>
     <NotAuthorized>

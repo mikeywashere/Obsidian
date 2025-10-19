@@ -1,10 +1,13 @@
 @page "/servers/{ServerId}"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Obsidian.Web.Authorization
 @using Obsidian.Web.Models
 @using Obsidian.Web.Services
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.RequireUser)]
 @inject IServerService ServerService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>@(_server?.Name ?? "Server Details")</PageTitle>
 
@@ -59,18 +62,22 @@
                 </div>
 
                 <div class="action-buttons">
-                    @if (_server.Status == ServerStatus.Stopped || _server.Status == ServerStatus.Error)
-                    {
-                        <button class="btn btn-success" @onclick="StartServer">Start Server</button>
-                    }
-                    @if (_server.Status == ServerStatus.Running)
-                    {
-                        <button class="btn btn-danger" @onclick="StopServer">Stop Server</button>
-                    }
-                    @if (_server.Status == ServerStatus.Starting || _server.Status == ServerStatus.Stopping)
-                    {
-                        <button class="btn btn-secondary" disabled>@_server.Status...</button>
-                    }
+                    <AuthorizeView Policy="@Policies.RequireAdmin">
+                        <Authorized>
+                            @if (_server.Status == ServerStatus.Stopped || _server.Status == ServerStatus.Error)
+                            {
+                                <button class="btn btn-success" @onclick="StartServer">Start Server</button>
+                            }
+                            @if (_server.Status == ServerStatus.Running)
+                            {
+                                <button class="btn btn-danger" @onclick="StopServer">Stop Server</button>
+                            }
+                            @if (_server.Status == ServerStatus.Starting || _server.Status == ServerStatus.Stopping)
+                            {
+                                <button class="btn btn-secondary" disabled>@_server.Status...</button>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
                     <button class="btn btn-primary" @onclick="RefreshLogs">Refresh Logs</button>
                 </div>
             </div>
