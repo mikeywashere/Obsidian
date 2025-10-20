@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Obsidian\Obsidian.csproj" />
     <ProjectReference Include="..\Obsidian.Web\Obsidian.Web.csproj" />
+    <ProjectReference Include="..\Obsidian.DataAccess\Obsidian.DataAccess.csproj" />
   </ItemGroup>
 
   <ItemGroup>

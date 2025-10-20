@@ -1,4 +1,4 @@
-using Obsidian.Web.Models;
+using Obsidian.Models;
 
 namespace Obsidian.Web.Services;
 
