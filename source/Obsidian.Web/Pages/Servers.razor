@@ -1,10 +1,13 @@
 @page "/servers"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Obsidian.Web.Authorization
 @using Obsidian.Web.Models
 @using Obsidian.Web.Services
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.RequireUser)]
 @inject IServerService ServerService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Servers</PageTitle>
 
@@ -61,24 +64,33 @@
                     </div>
 
                     <div class="server-actions">
-                        @if (server.Status == ServerStatus.Stopped || server.Status == ServerStatus.Error)
-                        {
-                            <button class="btn btn-success" @onclick:stopPropagation="true" @onclick="() => StartServer(server.Id)">
-                                Start
-                            </button>
-                        }
-                        @if (server.Status == ServerStatus.Running)
-                        {
-                            <button class="btn btn-danger" @onclick:stopPropagation="true" @onclick="() => StopServer(server.Id)">
-                                Stop
-                            </button>
-                        }
-                        @if (server.Status == ServerStatus.Starting || server.Status == ServerStatus.Stopping)
-                        {
-                            <button class="btn btn-secondary" disabled>
-                                @server.Status...
-                            </button>
-                        }
+                        <AuthorizeView Policy="@Policies.RequireAdmin">
+                            <Authorized>
+                                @if (server.Status == ServerStatus.Stopped || server.Status == ServerStatus.Error)
+                                {
+                                    <button class="btn btn-success" @onclick:stopPropagation="true" @onclick="() => StartServer(server.Id)">
+                                        Start
+                                    </button>
+                                }
+                                @if (server.Status == ServerStatus.Running)
+                                {
+                                    <button class="btn btn-danger" @onclick:stopPropagation="true" @onclick="() => StopServer(server.Id)">
+                                        Stop
+                                    </button>
+                                }
+                                @if (server.Status == ServerStatus.Starting || server.Status == ServerStatus.Stopping)
+                                {
+                                    <button class="btn btn-secondary" disabled>
+                                        @server.Status...
+                                    </button>
+                                }
+                            </Authorized>
+                            <NotAuthorized>
+                                <div class="info-text">
+                                    <small>Admin access required to control servers</small>
+                                </div>
+                            </NotAuthorized>
+                        </AuthorizeView>
                     </div>
                 </div>
             }

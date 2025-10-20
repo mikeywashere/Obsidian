@@ -15,6 +15,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
@@ -29,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Obsidian\Obsidian.csproj" />
     <ProjectReference Include="..\Obsidian.DataAccess\Obsidian.DataAccess.csproj" />
+    <ProjectReference Include="..\Obsidian.Web\Obsidian.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

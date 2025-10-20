@@ -7,6 +7,7 @@ Minecraft Bedrock Server runner and manager with web UI
 - **Server Management**: Start, stop, and configure Minecraft Bedrock servers
 - **Web UI**: Modern Blazor WebAssembly interface for server administration
 - **Microsoft Authentication**: Secure access with Microsoft account login
+- **Role-Based Authorization**: Three-tier access control (User, Admin, SystemAdmin)
 - **Real-time Monitoring**: View server status, player counts, and logs
 - **Log Viewer**: Intuitive log viewing with color-coded levels
 
@@ -51,4 +52,14 @@ Navigate to `https://localhost:7223` or `http://localhost:5276`
 - Responsive flat design
 
 For detailed setup instructions including Microsoft authentication configuration, see [source/Obsidian.Web/README.md](source/Obsidian.Web/README.md).
+
+## Authentication and Authorization
+
+Obsidian includes a robust authentication and role-based authorization system:
+
+- **Three User Roles**: User (read-only), Admin (server management), SystemAdmin (full access)
+- **Azure AD Integration**: Leverages Microsoft Authentication Library (MSAL)
+- **Policy-Based Authorization**: Declarative access control throughout the application
+
+For detailed authentication setup and configuration, see [AUTHENTICATION.md](AUTHENTICATION.md).
 
