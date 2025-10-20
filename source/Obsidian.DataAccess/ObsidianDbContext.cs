@@ -31,6 +31,7 @@ public class ObsidianDbContext : DbContext
             entity.Property(e => e.ServerId).IsRequired().HasMaxLength(450);
             entity.Property(e => e.Message).IsRequired();
             entity.Property(e => e.Level).HasConversion<string>();
+            // This composite index optimizes queries for retrieving logs by server in chronological order.
             entity.HasIndex(e => new { e.ServerId, e.Timestamp });
         });
     }
