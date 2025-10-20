@@ -10,8 +10,8 @@ public class ObsidianDbContext : DbContext
     {
     }
 
-    public DbSet<ServerInfo> Servers { get; set; }
-    public DbSet<ServerLog> ServerLogs { get; set; }
+    public DbSet<ServerInfo> Servers { get; set; } = null!;
+    public DbSet<ServerLog> ServerLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
