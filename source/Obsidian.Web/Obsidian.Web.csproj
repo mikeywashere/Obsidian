@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="8.0.20" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Obsidian.Models\Obsidian.Models.csproj" />
+  </ItemGroup>
+
 </Project>
