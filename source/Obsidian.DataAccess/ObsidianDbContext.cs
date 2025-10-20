@@ -33,6 +33,10 @@ public class ObsidianDbContext : DbContext
             entity.Property(e => e.Level).HasConversion<string>();
             // This composite index optimizes queries for retrieving logs by server in chronological order.
             entity.HasIndex(e => new { e.ServerId, e.Timestamp });
+            entity.HasOne<ServerInfo>()
+                .WithMany()
+                .HasForeignKey(e => e.ServerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
