@@ -1,0 +1,92 @@
+# GitHub Copilot Workspace Configuration
+# This file helps Copilot understand your repository structure and workflows
+
+description: "Minecraft Bedrock Server runner and manager with web UI. Includes UDP proxy for debugging, Blazor WebAssembly frontend, and Microsoft authentication."
+
+technologies:
+  # Primary technologies
+  - csharp
+  - dotnet
+  - blazor
+  - playwright
+  
+  # Additional technologies
+  - javascript
+  - html
+  - css
+
+# Main programming language
+language: csharp
+
+# .NET and C# version information
+framework: net8.0
+
+# Key directories in the repository
+structure:
+  source_directories:
+    - source/Obsidian              # Main server application
+    - source/Obsidian.Web          # Blazor WebAssembly web UI
+    - source/Obsidian.DataAccess   # Data access layer
+    - source/Obsidian.UnitTests    # xUnit test project
+  
+  test_directories:
+    - source/Obsidian.UnitTests
+  
+  documentation:
+    - README.md
+    - UDP_PROXY_README.md
+    - source/Obsidian.Web/README.md
+
+# Build configuration
+build:
+  # Primary build command
+  command: "dotnet build --no-restore"
+  
+  # Build steps in order
+  steps:
+    - name: "Restore dependencies"
+      command: "dotnet restore"
+    - name: "Build solution"
+      command: "dotnet build --no-restore"
+  
+  # Build artifacts location
+  output_directory: "source/*/bin/Debug/net8.0"
+
+# Test configuration
+test:
+  # Primary test command
+  command: "dotnet test --no-build --verbosity normal"
+  
+  # Test framework information
+  framework: xunit
+  
+  # Mock library used
+  mocking_library: nsubstitute
+  
+  # Additional test setup
+  prerequisites:
+    - "Playwright browsers may need to be installed with: pwsh bin/Debug/net8.0/playwright.ps1 install"
+    - "Or using npm: npx playwright install --with-deps"
+
+# Development workflow
+development:
+  # How to run the web application
+  run_web:
+    command: "cd source/Obsidian.Web && dotnet run"
+    ports:
+      - 7223  # HTTPS
+      - 5276  # HTTP
+  
+  # Package management
+  package_manager:
+    dotnet: "NuGet packages managed via .csproj files"
+    npm: "Minimal npm usage for Playwright browser installation"
+
+# Additional context
+notes:
+  - "This is a Minecraft Bedrock server management application"
+  - "Uses Playwright for browser automation to fetch Minecraft server versions"
+  - "Web UI uses Blazor WebAssembly with Microsoft authentication"
+  - "UDP proxy feature allows intercepting Minecraft server traffic for debugging"
+  - "Tests use xUnit framework with NSubstitute for mocking"
+  - "Solution file: Obsidian.sln at repository root"
