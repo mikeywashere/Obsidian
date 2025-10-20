@@ -9,6 +9,10 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         string connectionString)
     {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new ArgumentException("Connection string cannot be null or whitespace.", nameof(connectionString));
+        }
         services.AddDbContext<ObsidianDbContext>(options =>
         {
             options.UseSqlite(connectionString);
