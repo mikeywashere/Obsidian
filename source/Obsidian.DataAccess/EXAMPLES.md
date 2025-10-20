@@ -71,11 +71,8 @@ builder.Services.AddControllers();
 // Configure database
 var connectionString = builder.Configuration.GetConnectionString("ObsidianDb") 
     ?? "Data Source=obsidian.db";
-var provider = builder.Configuration.GetValue<string>("DatabaseProvider") == "PostgreSQL"
-    ? DatabaseProvider.PostgreSQL
-    : DatabaseProvider.SQLite;
 
-builder.Services.AddObsidianDbContext(connectionString, provider);
+builder.Services.AddObsidianDbContext(connectionString);
 
 var app = builder.Build();
 
@@ -194,8 +191,7 @@ builder.Services.AddServerSideBlazor();
 
 // Configure database
 builder.Services.AddObsidianDbContext(
-    connectionString: "Data Source=obsidian.db",
-    provider: DatabaseProvider.SQLite
+    connectionString: "Data Source=obsidian.db"
 );
 
 var app = builder.Build();
@@ -268,33 +264,16 @@ else
 
 ## Configuration Examples
 
-### appsettings.json (SQLite)
+### appsettings.json
 ```json
 {
   "ConnectionStrings": {
     "ObsidianDb": "Data Source=obsidian.db"
-  },
-  "DatabaseProvider": "SQLite"
-}
-```
-
-### appsettings.json (PostgreSQL)
-```json
-{
-  "ConnectionStrings": {
-    "ObsidianDb": "Host=localhost;Database=obsidian;Username=postgres;Password=postgres"
-  },
-  "DatabaseProvider": "PostgreSQL"
+  }
 }
 ```
 
 ### Environment Variables
 ```bash
-# SQLite
 export ConnectionStrings__ObsidianDb="Data Source=obsidian.db"
-export DatabaseProvider="SQLite"
-
-# PostgreSQL
-export ConnectionStrings__ObsidianDb="Host=localhost;Database=obsidian;Username=postgres;Password=postgres"
-export DatabaseProvider="PostgreSQL"
 ```

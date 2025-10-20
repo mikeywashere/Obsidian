@@ -11,7 +11,7 @@ using Obsidian.DataAccess;
 namespace Obsidian.DataAccess.Migrations.Sqlite
 {
     [DbContext(typeof(ObsidianDbContext))]
-    [Migration("20251019202519_InitialCreate")]
+    [Migration("20251020005008_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

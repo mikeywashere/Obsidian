@@ -4,9 +4,9 @@ Entity Framework Core database layer for Obsidian Minecraft Bedrock Server Manag
 
 ## Features
 
-- **Database Provider Abstraction**: Seamlessly switch between SQLite and PostgreSQL
+- **SQLite Database**: Lightweight, file-based database for easy deployment
 - **Entity Framework Core**: Modern ORM with LINQ support
-- **Migrations**: Separate migrations for SQLite and PostgreSQL
+- **Migrations**: SQLite migrations for database schema management
 - **Type-safe entities**: Strongly typed models for server information and logs
 
 ## Database Entities
@@ -40,16 +40,8 @@ Add the database context to your service collection:
 ```csharp
 using Obsidian.DataAccess;
 
-// SQLite (default)
 builder.Services.AddObsidianDbContext(
-    connectionString: "Data Source=obsidian.db",
-    provider: DatabaseProvider.SQLite
-);
-
-// PostgreSQL
-builder.Services.AddObsidianDbContext(
-    connectionString: "Host=localhost;Database=obsidian;Username=postgres;Password=postgres",
-    provider: DatabaseProvider.PostgreSQL
+    connectionString: "Data Source=obsidian.db"
 );
 ```
 
@@ -87,13 +79,8 @@ public class ServerService
 To apply migrations to your database:
 
 ```bash
-# SQLite
 cd source/Obsidian.DataAccess
 dotnet ef database update
-
-# PostgreSQL
-cd source/Obsidian.DataAccess
-DB_PROVIDER=PostgreSQL dotnet ef database update
 ```
 
 ### Creating New Migrations
@@ -101,13 +88,8 @@ DB_PROVIDER=PostgreSQL dotnet ef database update
 When you modify entities, create new migrations:
 
 ```bash
-# SQLite
 cd source/Obsidian.DataAccess
 dotnet ef migrations add YourMigrationName --output-dir Migrations/Sqlite
-
-# PostgreSQL
-cd source/Obsidian.DataAccess
-DB_PROVIDER=PostgreSQL dotnet ef migrations add YourMigrationName --output-dir Migrations/PostgreSQL
 ```
 
 ## Connection Strings
@@ -115,11 +97,6 @@ DB_PROVIDER=PostgreSQL dotnet ef migrations add YourMigrationName --output-dir M
 ### SQLite
 ```
 Data Source=obsidian.db
-```
-
-### PostgreSQL
-```
-Host=localhost;Database=obsidian;Username=postgres;Password=postgres
 ```
 
 For production, store connection strings securely using:
@@ -132,4 +109,3 @@ For production, store connection strings securely using:
 - `Microsoft.EntityFrameworkCore` (9.0.5)
 - `Microsoft.EntityFrameworkCore.Design` (9.0.5)
 - `Microsoft.EntityFrameworkCore.Sqlite` (9.0.5)
-- `Npgsql.EntityFrameworkCore.PostgreSQL` (9.0.4)

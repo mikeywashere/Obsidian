@@ -7,29 +7,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddObsidianDbContext(
         this IServiceCollection services,
-        string connectionString,
-        DatabaseProvider provider = DatabaseProvider.SQLite)
+        string connectionString)
     {
         services.AddDbContext<ObsidianDbContext>(options =>
         {
-            switch (provider)
-            {
-                case DatabaseProvider.PostgreSQL:
-                    options.UseNpgsql(connectionString);
-                    break;
-                case DatabaseProvider.SQLite:
-                default:
-                    options.UseSqlite(connectionString);
-                    break;
-            }
+            options.UseSqlite(connectionString);
         });
 
         return services;
     }
-}
-
-public enum DatabaseProvider
-{
-    SQLite,
-    PostgreSQL
 }
