@@ -54,7 +54,7 @@ namespace Obsidian
         Adventure
     }
 
-    internal class ServerProperties
+    public class ServerProperties
     {
         /// <summary>
         /// The name of the server displayed to players.

@@ -1,0 +1,200 @@
+@inject IServerPropertiesService PropertiesService
+
+@if (_loading)
+{
+    <div class="loading">
+        <p>Loading properties...</p>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="error-message">
+        <p>Error loading properties: @_error</p>
+        <button class="btn btn-secondary" @onclick="LoadProperties">Retry</button>
+    </div>
+}
+else if (_properties != null)
+{
+    <EditForm Model="@_properties" OnValidSubmit="SaveProperties">
+        <div class="properties-form">
+            <div class="form-section">
+                <h3>Basic Settings</h3>
+                <div class="form-group">
+                    <label for="server-name">Server Name:</label>
+                    <InputText id="server-name" class="form-control" @bind-Value="_properties.ServerName" />
+                </div>
+
+                <div class="form-group">
+                    <label for="game-mode">Game Mode:</label>
+                    <InputSelect id="game-mode" class="form-control" @bind-Value="_properties.GameMode">
+                        <option value="@GameMode.Survival">Survival</option>
+                        <option value="@GameMode.Creative">Creative</option>
+                        <option value="@GameMode.Adventure">Adventure</option>
+                    </InputSelect>
+                </div>
+
+                <div class="form-group">
+                    <label for="difficulty">Difficulty:</label>
+                    <InputSelect id="difficulty" class="form-control" @bind-Value="_properties.Difficulty">
+                        <option value="@Difficulty.Peaceful">Peaceful</option>
+                        <option value="@Difficulty.Easy">Easy</option>
+                        <option value="@Difficulty.Normal">Normal</option>
+                        <option value="@Difficulty.Hard">Hard</option>
+                    </InputSelect>
+                </div>
+
+                <div class="form-group">
+                    <label for="max-players">Max Players:</label>
+                    <InputNumber id="max-players" class="form-control" @bind-Value="_properties.MaxPlayers" min="1" max="100" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Server Options</h3>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <InputCheckbox @bind-Value="_properties.OnlineMode" />
+                        Online Mode
+                    </label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <InputCheckbox @bind-Value="_properties.AllowCheats" />
+                        Allow Cheats
+                    </label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <InputCheckbox @bind-Value="_properties.AllowList" />
+                        Allow List
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="server-port">Server Port:</label>
+                    <InputNumber id="server-port" class="form-control" @bind-Value="_properties.ServerPort" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>World Settings</h3>
+                <div class="form-group">
+                    <label for="view-distance">View Distance (4-64):</label>
+                    <InputNumber id="view-distance" class="form-control" @bind-Value="_properties.ViewDistance" min="4" max="64" />
+                </div>
+
+                <div class="form-group">
+                    <label for="level-name">Level Name:</label>
+                    <InputText id="level-name" class="form-control" @bind-Value="_properties.LevelName" />
+                </div>
+
+                <div class="form-group">
+                    <label for="level-seed">Level Seed:</label>
+                    <InputText id="level-seed" class="form-control" @bind-Value="_properties.LevelSeed" />
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save Properties</span>
+                    }
+                </button>
+            </div>
+
+            @if (_saveSuccess)
+            {
+                <div class="success-message">
+                    <p>Properties saved successfully!</p>
+                </div>
+            }
+
+            @if (_saveError != null)
+            {
+                <div class="error-message">
+                    <p>Error saving properties: @_saveError</p>
+                </div>
+            }
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public string ServerId { get; set; } = string.Empty;
+
+    private ServerProperties? _properties;
+    private bool _loading = true;
+    private string? _error;
+    private bool _saving = false;
+    private bool _saveSuccess = false;
+    private string? _saveError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProperties();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_loading)
+        {
+            await LoadProperties();
+        }
+    }
+
+    private async Task LoadProperties()
+    {
+        _loading = true;
+        _error = null;
+        _saveSuccess = false;
+        _saveError = null;
+        StateHasChanged();
+
+        try
+        {
+            _properties = await PropertiesService.GetPropertiesAsync(ServerId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveProperties()
+    {
+        if (_properties == null) return;
+
+        _saving = true;
+        _saveSuccess = false;
+        _saveError = null;
+        StateHasChanged();
+
+        try
+        {
+            await PropertiesService.SavePropertiesAsync(ServerId, _properties);
+            _saveSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,16 +1,11 @@
-# Project Context
-
-- **Project:** Obsidian
-- **Created:** 2026-03-20
+# Scribe — History
 
 ## Core Context
 
-Agent Scribe initialized and ready for work.
-
-## Recent Updates
-
-📌 Team initialized on 2026-03-20
+- **Project:** Upgrade the Obsidian Minecraft Bedrock Server manager from .NET 8 to .NET 9, updating all NuGet packages across the Blazor WASM frontend, EF Core data access, console backend, and unit test projects.
+- **Role:** Session Logger
+- **Joined:** 2026-03-20T23:20:52.219Z
 
 ## Learnings
 
-Initial setup complete.
+<!-- Append learnings below -->

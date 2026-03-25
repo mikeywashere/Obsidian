@@ -1,4 +1,4 @@
-namespace Obsidian.Web.Models;
+namespace Obsidian.Models;
 
 public class ServerInfo
 {

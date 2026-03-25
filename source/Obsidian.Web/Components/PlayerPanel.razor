@@ -1,0 +1,139 @@
+@inject IServerPlayerService PlayerService
+@inject IConfiguration Configuration
+@implements IAsyncDisposable
+
+<div class="player-panel">
+    <div class="player-panel-header">
+        <h2>
+            @if (!_loading)
+            {
+                <strong>@_players.Count</strong>
+                <span> player@(_players.Count == 1 ? "" : "s") online</span>
+            }
+            else
+            {
+                <span>Players</span>
+            }
+        </h2>
+        <span class="connection-indicator @(_hubConnection?.State == HubConnectionState.Connected ? "connected" : "disconnected")">
+            <span class="status-dot"></span>
+            <span>@(_hubConnection?.State == HubConnectionState.Connected ? "Live" : "Disconnected")</span>
+        </span>
+    </div>
+
+    @if (_loading)
+    {
+        <p class="player-panel-empty">Loading players...</p>
+    }
+    else if (_players.Count == 0)
+    {
+        <p class="player-panel-empty">&mdash; No players online</p>
+    }
+    else
+    {
+        <ul class="player-list">
+            @foreach (var player in _players)
+            {
+                <li class="player-item">
+                    <span class="player-name">@player.Name</span>
+                    <span class="player-joined text-muted">joined @FormatRelative(player.JoinedAt)</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string ServerId { get; set; } = string.Empty;
+
+    private List<PlayerInfo> _players = new();
+    private bool _loading = true;
+    private HubConnection? _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlayers();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadPlayers()
+    {
+        _loading = true;
+        try
+        {
+            var result = await PlayerService.GetPlayersAsync(ServerId);
+            _players = result.ToList();
+        }
+        catch
+        {
+            _players = new();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+        var hubUrl = apiBaseUrl.TrimEnd('/') + "/hubs/players";
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl)
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<PlayerInfo>("PlayerJoined", player =>
+        {
+            if (!_players.Any(p => p.Xuid == player.Xuid))
+                _players.Add(player);
+            InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<PlayerInfo>("PlayerLeft", player =>
+        {
+            _players.RemoveAll(p => p.Xuid == player.Xuid);
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await _hubConnection.StartAsync();
+            await _hubConnection.InvokeAsync("JoinServer", ServerId);
+        }
+        catch
+        {
+            // Connection failed — UI shows disconnected dot, list still shows HTTP snapshot
+        }
+    }
+
+    private static string FormatRelative(DateTime utc)
+    {
+        var elapsed = DateTime.UtcNow - utc;
+        return elapsed.TotalSeconds < 60
+            ? "just now"
+            : elapsed.TotalMinutes < 60
+                ? $"{(int)elapsed.TotalMinutes} min ago"
+                : elapsed.TotalHours < 24
+                    ? $"{(int)elapsed.TotalHours} hr ago"
+                    : $"{(int)elapsed.TotalDays} day{((int)elapsed.TotalDays == 1 ? "" : "s")} ago";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            try
+            {
+                await _hubConnection.InvokeAsync("LeaveServer", ServerId);
+                await _hubConnection.DisposeAsync();
+            }
+            catch
+            {
+                // Ignore errors during disposal
+            }
+        }
+    }
+}
