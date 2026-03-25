@@ -32,6 +32,12 @@ public class UdpProxy : IUdpProxy
     public event EventHandler<PacketEventArgs>? ResponseReceived;
 
     /// <summary>
+    /// Event triggered after each packet (both directions) has been parsed.
+    /// Only fires when there are subscribers — zero-cost when unused.
+    /// </summary>
+    public event EventHandler<ParsedPacketEventArgs>? PacketParsed;
+
+    /// <summary>
     /// Initializes a new instance of the UDP proxy.
     /// </summary>
     /// <param name="listenPort">The port to listen on for incoming UDP packets.</param>
@@ -127,6 +133,12 @@ public class UdpProxy : IUdpProxy
         await clientSocket.SendAsync(data, data.Length, _destinationEndPoint);
         PacketForwarded?.Invoke(this, new PacketEventArgs(_destinationEndPoint, data, PacketDirection.ClientToServer));
         Console.WriteLine($"Forwarded {data.Length} bytes to {_destinationEndPoint}");
+
+        if (PacketParsed != null)
+        {
+            var parsed = RakNetParser.Parse(data, PacketDirection.ClientToServer);
+            PacketParsed.Invoke(this, new ParsedPacketEventArgs { RemoteEndPoint = clientEndPoint, Packet = parsed });
+        }
     }
 
     private async Task ListenForServerResponseAsync(IPEndPoint clientEndPoint, UdpClient clientSocket)
@@ -144,6 +156,12 @@ public class UdpProxy : IUdpProxy
                 // Forward the response back to the client
                 await _listener.SendAsync(result.Buffer, result.Buffer.Length, clientEndPoint);
                 Console.WriteLine($"Forwarded {result.Buffer.Length} bytes to {clientEndPoint}");
+
+                if (PacketParsed != null)
+                {
+                    var parsed = RakNetParser.Parse(result.Buffer, PacketDirection.ServerToClient);
+                    PacketParsed.Invoke(this, new ParsedPacketEventArgs { RemoteEndPoint = result.RemoteEndPoint, Packet = parsed });
+                }
             }
         }
         catch (Exception ex)
