@@ -34,7 +34,7 @@ public class PlayerBroadcasterTests
             playerTracker, MakeEvent("server-1"));
         await Task.Delay(100);
 
-        await clientProxy.Received(1).SendCoreAsync("PlayerJoined", Arg.Any<object[]>(), Arg.Any<CancellationToken>());
+        await clientProxy.Received(1).SendCoreAsync(Arg.Is("PlayerJoined"), Arg.Any<object[]>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class PlayerBroadcasterTests
             playerTracker, MakeEvent("server-1"));
         await Task.Delay(100);
 
-        await clientProxy.Received(1).SendCoreAsync("PlayerLeft", Arg.Any<object[]>(), Arg.Any<CancellationToken>());
+        await clientProxy.Received(1).SendCoreAsync(Arg.Is("PlayerLeft"), Arg.Any<object[]>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -65,8 +65,8 @@ public class PlayerBroadcasterTests
             playerTracker, MakeEvent("server-1"));
         await Task.Delay(100);
 
-        await clientProxy.DidNotReceive().SendCoreAsync("PlayerJoined", Arg.Any<object[]>(), Arg.Any<CancellationToken>());
-        await clientProxy.DidNotReceive().SendCoreAsync("PlayerLeft", Arg.Any<object[]>(), Arg.Any<CancellationToken>());
+        await clientProxy.DidNotReceive().SendCoreAsync(Arg.Is<string>("PlayerJoined"), Arg.Any<object[]>(), Arg.Any<CancellationToken>());
+        await clientProxy.DidNotReceive().SendCoreAsync(Arg.Is<string>("PlayerLeft"), Arg.Any<object[]>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -97,6 +97,64 @@ public class PlayerBroadcasterTests
         await Task.Delay(100);
 
         clients.Received(1).Group("server-srv-42");
+    }
+
+    [Fact]
+    public async Task StartAsync_SubscribesToPlayerJoinedEvent()
+    {
+        var (playerTracker, _, clientProxy, broadcaster) = BuildBroadcaster();
+
+        await broadcaster.StartAsync(CancellationToken.None);
+
+        playerTracker.PlayerJoined += Raise.Event<EventHandler<PlayerEventArgs>>(
+            playerTracker, MakeEvent("server-1"));
+        await Task.Delay(100);
+
+        await clientProxy.ReceivedWithAnyArgs(1).SendAsync("PlayerJoined");
+    }
+
+    [Fact]
+    public async Task StartAsync_SubscribesToPlayerLeftEvent()
+    {
+        var (playerTracker, _, clientProxy, broadcaster) = BuildBroadcaster();
+
+        await broadcaster.StartAsync(CancellationToken.None);
+
+        playerTracker.PlayerLeft += Raise.Event<EventHandler<PlayerEventArgs>>(
+            playerTracker, MakeEvent("server-1"));
+        await Task.Delay(100);
+
+        await clientProxy.ReceivedWithAnyArgs(1).SendAsync("PlayerLeft");
+    }
+
+    [Fact]
+    public async Task PlayerJoined_BroadcastsToCorrectGroup()
+    {
+        var (playerTracker, hubContext, _, broadcaster) = BuildBroadcaster();
+        var clients = hubContext.Clients;
+
+        await broadcaster.StartAsync(CancellationToken.None);
+
+        playerTracker.PlayerJoined += Raise.Event<EventHandler<PlayerEventArgs>>(
+            playerTracker, MakeEvent("srv-99"));
+        await Task.Delay(100);
+
+        clients.Received(1).Group("server-srv-99");
+    }
+
+    [Fact]
+    public async Task PlayerLeft_BroadcastsToCorrectGroup()
+    {
+        var (playerTracker, hubContext, _, broadcaster) = BuildBroadcaster();
+        var clients = hubContext.Clients;
+
+        await broadcaster.StartAsync(CancellationToken.None);
+
+        playerTracker.PlayerLeft += Raise.Event<EventHandler<PlayerEventArgs>>(
+            playerTracker, MakeEvent("srv-99"));
+        await Task.Delay(100);
+
+        clients.Received(1).Group("server-srv-99");
     }
 }
 
