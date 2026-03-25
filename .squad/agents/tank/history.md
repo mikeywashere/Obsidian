@@ -88,3 +88,46 @@
 - GetInstallPath() provides clean access to server installation paths without exposing internal collections
 - LogReceived event production-side testing requires integration tests with real BedrockProcess output
 
+### 2026-03-25 - Player Tracking Tests
+
+**Task:** Write comprehensive test coverage for player tracking components (PlayerTracker, PlayersController, PlayerBroadcaster).
+
+**What I built:**
+- `PlayerTrackerTests.cs` — 10 tests (9 from Neo's initial commit + 1 added)
+  - `GetPlayers_ReturnsEmpty_WhenNoPlayersConnected`
+  - `OnConnectLog_AddsPlayer_AndFiresPlayerJoined`
+  - `OnConnectLog_WithInfoPrefix_AddsPlayer`
+  - `OnDisconnectLog_RemovesPlayer_AndFiresPlayerLeft`
+  - `OnDisconnectLog_WithNoExistingRecord_DoesNotThrow`
+  - `OnDisconnectLog_DoesNotFirePlayerLeft_WhenNoRecord`
+  - `GetPlayers_IsScopedToServerId`
+  - `ConnectLog_UpdatesExistingPlayer_IfSameXuid`
+  - `UnrelatedLog_IsIgnored`
+  - `GetPlayers_ReturnsSnapshot_NotLiveReference` ← Tank added
+- `PlayersControllerTests.cs` — 2 tests (written by Neo, matched spec exactly)
+  - `GetPlayers_ReturnsOkWithPlayerList`
+  - `GetPlayers_ReturnsEmptyList_WhenNoPlayersOnline`
+- `PlayerBroadcasterTests.cs` — 9 tests (5 from Neo + 4 added, + 3 bugs fixed)
+  - Fixed: `SendCoreAsync` arg mixing bug (literal + `Arg.Any` requires `Arg.Is` for literal)
+  - Added: `StartAsync_SubscribesToPlayerJoinedEvent`
+  - Added: `StartAsync_SubscribesToPlayerLeftEvent`
+  - Added: `PlayerJoined_BroadcastsToCorrectGroup`
+  - Added: `PlayerLeft_BroadcastsToCorrectGroup`
+
+**Test results:**
+- Total: 72 tests (prior 51 + 21 new player tracking)
+- All tests PASSED ✅
+
+**Testing approach:**
+- `PlayerTracker` tested synchronously — log events fire inline (no async needed)
+- `GetPlayers` returns `ToList()` snapshot → verified immutability against live state
+- Regex-based parser tested with both plain and `[INFO]`-prefixed log formats
+- `PlayerBroadcaster` uses same fire-and-forget pattern as `ServerLogBroadcaster` → `Task.Delay(100)` needed
+- `SendCoreAsync` with mixed literal + matchers must use `Arg.Is<string>(...)` for the literal
+
+**Key insights:**
+- NSubstitute: mixing literal args with `Arg.Any` matchers causes "non-bound argument specifications" error — all args must use matchers when any one does (`Arg.Is` for literals)
+- `IClientProxy.SendAsync` is an extension method over `SendCoreAsync(string, object[], CancellationToken)` — use `ReceivedWithAnyArgs` OR `Arg.Is` pattern for `SendCoreAsync`
+- `PlayerTracker` uses `ConcurrentDictionary<string, ConcurrentDictionary<string, PlayerInfo>>` keyed by serverId then xuid
+- `GetPlayers` returns `.ToList()` copy — confirmed by snapshot isolation test
+- Disconnect with no prior connect silently no-ops (PlayerLeft not fired)
