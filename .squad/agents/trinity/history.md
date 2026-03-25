@@ -44,7 +44,31 @@ The complete Obsidian solution compiled successfully with 0 errors and 0 warning
 
 Frontend HTTP services integrated with Neo's backend API. System ready for end-to-end integration testing and real-time log streaming via SignalR.
 
-### 2026-03-25: SignalR Live Logs & Properties Editor Complete
+### 2026-07-14: PlayerPanel Component with SignalR Player Tracking
+
+**New Files Created:**
+- `source/Obsidian.Models/PlayerInfo.cs` — shared `record PlayerInfo(ServerId, Name, Xuid, JoinedAt, LastSeen)`
+- `source/Obsidian.Web/Services/IServerPlayerService.cs` — interface with `GetPlayersAsync(serverId)`
+- `source/Obsidian.Web/Services/HttpServerPlayerService.cs` — HTTP implementation calling `GET /api/servers/{serverId}/players`
+- `source/Obsidian.Web/Components/PlayerPanel.razor` — self-contained component with full SignalR lifecycle
+
+**PlayerPanel Features:**
+- Loads initial player list via `IServerPlayerService.GetPlayersAsync` on init
+- Connects to `{ApiBaseUrl}/hubs/players`, calls `JoinServer(serverId)` on connect
+- Listens to `PlayerJoined` / `PlayerLeft` hub events; deduplicates by `Xuid` on join
+- Shows player count badge ("N players online"), player names with relative join times
+- Loading state while initial fetch in progress; empty state with em-dash when no players
+- Connection indicator dot matching ServerDetail's log hub pattern (Live / Disconnected)
+- Implements `IAsyncDisposable` — calls `LeaveServer` and disposes hub on teardown
+
+**Integration:**
+- Embedded `<PlayerPanel ServerId="@ServerId" />` in `ServerDetail.razor` between info panel and logs
+- Registered `IServerPlayerService` → `HttpServerPlayerService` in `Program.cs`
+- `Obsidian.Models` project reference already existed in `Obsidian.Web.csproj`
+
+**Build:** Solution builds successfully with 0 errors (6 pre-existing warnings, none new).
+
+
 
 **SignalR Integration in ServerDetail.razor:**
 - Added real-time log streaming via SignalR hub at `{apiBaseUrl}/hubs/serverlogs`
