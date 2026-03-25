@@ -26,8 +26,12 @@ builder.Services.AddSignalR();
 // Register server manager
 builder.Services.AddSingleton<IServerManager, ServerManager>();
 
-// Register SignalR broadcaster
+// Register player tracker
+builder.Services.AddSingleton<IPlayerTracker, PlayerTracker>();
+
+// Register SignalR broadcasters
 builder.Services.AddHostedService<ServerLogBroadcaster>();
+builder.Services.AddHostedService<PlayerBroadcaster>();
 
 var app = builder.Build();
 
@@ -44,5 +48,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ServerLogHub>("/hubs/serverlogs");
+app.MapHub<PlayerHub>("/hubs/players");
 
 app.Run();
