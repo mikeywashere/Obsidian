@@ -104,4 +104,42 @@ Upgraded all projects from net9.0 to net10.0 and updated all Microsoft.* package
 
 **Result:** `dotnet build` succeeded (0 errors). All 51 tests passed.
 
-**SDK used:** 10.0.201 (already installed on the machine)
+### 2026-05-28: Implemented Player Tracking — Backend
+
+Added log-based player tracking using Minecraft Bedrock server stdout event parsing.
+
+**Architecture:**
+- Log-based (NOT UDP packet inspection — Bedrock encrypts after login)
+- Singleton `PlayerTracker` subscribes to `IServerManager.LogReceived` at construction
+- `ConcurrentDictionary<string, ConcurrentDictionary<string, PlayerInfo>>` — outer key: serverId, inner key: xuid
+
+**New Files:**
+- `Obsidian.Models/PlayerInfo.cs` — `record PlayerInfo(ServerId, Name, Xuid, JoinedAt, LastSeen)`
+- `Obsidian.Api/Services/IPlayerTracker.cs` — interface with `PlayerJoined`/`PlayerLeft` events and `GetPlayers(serverId)`
+- `Obsidian.Api/Services/PlayerTracker.cs` — regex parsing of connect/disconnect log lines (handles optional `[INFO]` prefix)
+- `Obsidian.Api/Hubs/PlayerHub.cs` — SignalR hub with `JoinServer`/`LeaveServer` group methods
+- `Obsidian.Api/Hubs/PlayerBroadcaster.cs` — `IHostedService` bridging tracker events → `IHubContext<PlayerHub>`
+- `Obsidian.Api/Controllers/PlayersController.cs` — `GET /api/servers/{serverId}/players`
+- `Obsidian.UnitTests/PlayerTrackerTests.cs` — 8 unit tests (connect, disconnect, INFO prefix, cross-server isolation, edge cases)
+- `Obsidian.UnitTests/PlayerBroadcasterTests.cs` — 5 unit tests (subscribe/unsubscribe, group routing, method names)
+
+**SignalR Contract:**
+- Hub URL: `/hubs/players`
+- Client → Server: `JoinServer(serverId)`, `LeaveServer(serverId)`
+- Server → Client: `PlayerJoined(PlayerInfo)`, `PlayerLeft(PlayerInfo)`
+- Groups: `server-{serverId}`
+
+**REST Contract:**
+- `GET /api/servers/{serverId}/players` → `200 OK` with `PlayerInfo[]`
+
+**Regex patterns:**
+- Connect: `(?:\[INFO\]\s+)?Player connected:\s+(?<name>[^,]+),\s+xuid:\s+(?<xuid>\d+)`
+- Disconnect: `(?:\[INFO\]\s+)?Player disconnected:\s+(?<name>[^,]+),\s+xuid:\s+(?<xuid>\d+)`
+
+**DI Registration (Program.cs):**
+- `AddSingleton<IPlayerTracker, PlayerTracker>()`
+- `AddHostedService<PlayerBroadcaster>()`
+- `MapHub<PlayerHub>("/hubs/players")`
+
+**Result:** Build 0 errors. All 68 tests pass (51 existing + 13 new + 4 PlayersController).
+
