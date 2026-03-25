@@ -31,6 +31,7 @@
 
 **Services Registered:**
 - Replaced `MockServerService` with production `HttpServerService`
+
 ### 2026-03-25: Full Solution Build Succeeded
 
 The complete Obsidian solution compiled successfully with 0 errors and 0 warnings across all 6 projects:
@@ -42,4 +43,31 @@ The complete Obsidian solution compiled successfully with 0 errors and 0 warning
 - Obsidian.Tests
 
 Frontend HTTP services integrated with Neo's backend API. System ready for end-to-end integration testing and real-time log streaming via SignalR.
+
+### 2026-03-25: SignalR Live Logs & Properties Editor Complete
+
+**SignalR Integration in ServerDetail.razor:**
+- Added real-time log streaming via SignalR hub at `{apiBaseUrl}/hubs/serverlogs`
+- Implemented `IAsyncDisposable` for proper hub cleanup
+- Hub connection uses `JoinServer(serverId)` on connect and `LeaveServer(serverId)` on dispose
+- Logs pre-populate from REST API (`GetServerLogsAsync`) for history, then SignalR appends live updates
+- Added connection indicator UI showing "Live" (green) / "Disconnected" (gray) status
+- Removed "Refresh Logs" button — SignalR makes manual refresh obsolete
+- Hub configured with automatic reconnection for resilience
+
+**ServerPropertiesEditor Component Created:**
+- New component at `Components/ServerPropertiesEditor.razor` for editing server.properties
+- Uses Blazor `EditForm` with data binding to `ServerProperties` model
+- Form sections: Basic Settings (name, game mode, difficulty, max players), Server Options (online mode, cheats, allowlist, port), World Settings (view distance, level name/seed)
+- Includes loading states, error handling, and success/error feedback on save
+- Calls `IServerPropertiesService.SavePropertiesAsync` to persist changes
+
+**Configuration & DI:**
+- Added `@using Microsoft.AspNetCore.SignalR.Client` to `_Imports.razor` for global SignalR access
+- SignalR client created directly in component (standard Blazor WASM pattern, not via DI)
+- API base URL read from `IConfiguration["ApiBaseUrl"]` with fallback to `https://localhost:5001/`
+
+**Build Status:**
+- Obsidian.Web project builds successfully with 0 errors, 0 warnings
+- All SignalR and properties editor features compile cleanly
 

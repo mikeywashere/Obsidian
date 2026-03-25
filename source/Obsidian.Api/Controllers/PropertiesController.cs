@@ -64,8 +64,7 @@ public class PropertiesController : ControllerBase
 
     private string GetServerInstallPath(string serverId)
     {
-        // TODO: This is a temporary workaround. The IServerManager should expose install path.
-        // For now, we hardcode the demo server path.
-        return "C:\\bedrock";
+        return _serverManager.GetInstallPath(serverId) 
+            ?? throw new InvalidOperationException($"Install path not found for server '{serverId}'.");
     }
 }

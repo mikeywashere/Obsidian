@@ -1,3 +1,4 @@
+using Obsidian.Api.Hubs;
 using Obsidian.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,14 +8,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS
+// Add CORS (configured for SignalR with credentials)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7001", "http://localhost:5002")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -23,6 +25,9 @@ builder.Services.AddSignalR();
 
 // Register server manager
 builder.Services.AddSingleton<IServerManager, ServerManager>();
+
+// Register SignalR broadcaster
+builder.Services.AddHostedService<ServerLogBroadcaster>();
 
 var app = builder.Build();
 
@@ -38,5 +43,6 @@ app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ServerLogHub>("/hubs/serverlogs");
 
 app.Run();

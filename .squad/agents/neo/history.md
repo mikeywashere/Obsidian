@@ -47,3 +47,42 @@ The complete Obsidian solution compiled successfully with 0 errors and 0 warning
 Trinity's frontend HTTP client wiring complete and integrated. System ready for end-to-end integration testing.
 
 <!-- Append learnings below -->
+
+### 2026-03-25: Implemented SignalR Real-Time Log Streaming (P1)
+
+Added event-driven architecture for broadcasting server logs to connected clients via SignalR:
+
+**Event System:**
+- Added `LogReceived` event to `IServerManager` with `ServerLogEventArgs` record
+- `ServerManager.OutputDataReceived` and `ErrorDataReceived` now fire events after logging
+- Captured `serverId` in local variable to avoid closure issues in async event handlers
+
+**SignalR Hub Infrastructure:**
+- Created `ServerLogHub` with `JoinServer`/`LeaveServer` methods for group-based subscriptions
+- Created `ServerLogBroadcaster` hosted service to bridge `IServerManager.LogReceived` → SignalR clients
+- Group naming: `server-{serverId}` for targeted broadcasting
+- SignalR method: `ReceiveLog` sends `ServerLog` to subscribed clients
+
+**API Improvements:**
+- Added `GetInstallPath(string serverId)` to `IServerManager` interface
+- Fixed `PropertiesController` hardcoded install path — now uses `_serverManager.GetInstallPath()`
+- Updated CORS policy: `WithOrigins("https://localhost:7001", "http://localhost:5002")` with `.AllowCredentials()` (required for SignalR)
+- Registered `ServerLogBroadcaster` as hosted service in `Program.cs`
+- Mapped hub endpoint: `/hubs/serverlogs`
+
+**Technical Notes:**
+- SignalR requires `AllowCredentials()` which conflicts with `AllowAnyOrigin()` — must specify exact origins
+- Hosted service pattern ensures event subscription/cleanup on app start/stop
+- Fire-and-forget pattern (`_ = _hubContext.Clients...`) used in broadcaster to avoid blocking
+- Build succeeded with 0 errors/warnings
+
+**Files Modified:**
+- `IServerManager.cs` — Added event + `GetInstallPath` method
+- `ServerManager.cs` — Implemented event firing + `GetInstallPath`
+- `PropertiesController.cs` — Removed hardcoded path
+- `Program.cs` — CORS fix, broadcaster registration, hub mapping
+
+**Files Created:**
+- `Hubs\ServerLogHub.cs` — SignalR hub for client connections
+- `Hubs\ServerLogBroadcaster.cs` — Event bridge to SignalR
+

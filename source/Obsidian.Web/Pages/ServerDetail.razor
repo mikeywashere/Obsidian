@@ -5,7 +5,9 @@
 @using Obsidian.Models
 @using Obsidian.Web.Services
 @attribute [Authorize(Policy = Policies.RequireUser)]
+@implements IAsyncDisposable
 @inject IServerService ServerService
+@inject IConfiguration Configuration
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -78,12 +80,25 @@
                             }
                         </Authorized>
                     </AuthorizeView>
-                    <button class="btn btn-primary" @onclick="RefreshLogs">Refresh Logs</button>
                 </div>
             </div>
 
             <div class="log-panel">
-                <h2>Server Logs</h2>
+                <div class="log-header">
+                    <h2>Server Logs</h2>
+                    <span class="connection-indicator @(_hubConnection?.State == HubConnectionState.Connected ? "connected" : "disconnected")">
+                        @if (_hubConnection?.State == HubConnectionState.Connected)
+                        {
+                            <span class="status-dot"></span>
+                            <span>Live</span>
+                        }
+                        else
+                        {
+                            <span class="status-dot"></span>
+                            <span>Disconnected</span>
+                        }
+                    </span>
+                </div>
                 <div class="log-viewer">
                     @if (_logs == null)
                     {
@@ -106,6 +121,11 @@
                     }
                 </div>
             </div>
+
+            <div class="properties-panel">
+                <h2>Server Properties</h2>
+                <ServerPropertiesEditor ServerId="@ServerId" />
+            </div>
         </div>
     }
 </div>
@@ -116,10 +136,12 @@
 
     private ServerInfo? _server;
     private List<ServerLog>? _logs;
+    private HubConnection? _hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadServerDetails();
+        await InitializeSignalR();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -133,6 +155,33 @@
         if (_server != null)
         {
             _logs = await ServerService.GetServerLogsAsync(ServerId);
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+        var hubUrl = apiBaseUrl.TrimEnd('/') + "/hubs/serverlogs";
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl)
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<ServerLog>("ReceiveLog", log =>
+        {
+            _logs?.Add(log);
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await _hubConnection.StartAsync();
+            await _hubConnection.InvokeAsync("JoinServer", ServerId);
+        }
+        catch (Exception)
+        {
+            // Connection failed, but we'll continue with polling fallback
         }
     }
 
@@ -153,11 +202,19 @@
         await LoadServerDetails();
     }
 
-    private async Task RefreshLogs()
+    public async ValueTask DisposeAsync()
     {
-        if (_server != null)
+        if (_hubConnection is not null)
         {
-            _logs = await ServerService.GetServerLogsAsync(ServerId);
+            try
+            {
+                await _hubConnection.InvokeAsync("LeaveServer", ServerId);
+                await _hubConnection.DisposeAsync();
+            }
+            catch
+            {
+                // Ignore errors during disposal
+            }
         }
     }
 }

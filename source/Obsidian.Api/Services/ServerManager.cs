@@ -9,6 +9,8 @@ public class ServerManager : IServerManager
 {
     private readonly ConcurrentDictionary<string, ManagedServer> _servers = new();
 
+    public event EventHandler<ServerLogEventArgs>? LogReceived;
+
     public ServerManager()
     {
         // Seed with one in-memory server for demo
@@ -71,16 +73,20 @@ public class ServerManager : IServerManager
 
         var process = new Process { StartInfo = startInfo };
 
+        var capturedServerId = serverId;
+
         process.OutputDataReceived += (sender, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
-                server.Logs.Add(new ServerLog
+                var log = new ServerLog
                 {
                     Timestamp = DateTime.UtcNow,
                     Level = Models.LogLevel.Info,
                     Message = e.Data
-                });
+                };
+                server.Logs.Add(log);
+                LogReceived?.Invoke(this, new ServerLogEventArgs(capturedServerId, log));
             }
         };
 
@@ -88,12 +94,14 @@ public class ServerManager : IServerManager
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
-                server.Logs.Add(new ServerLog
+                var log = new ServerLog
                 {
                     Timestamp = DateTime.UtcNow,
                     Level = Models.LogLevel.Error,
                     Message = e.Data
-                });
+                };
+                server.Logs.Add(log);
+                LogReceived?.Invoke(this, new ServerLogEventArgs(capturedServerId, log));
             }
         };
 
@@ -178,6 +186,11 @@ public class ServerManager : IServerManager
         var server = new ManagedServer(info, installPath);
         _servers[id] = server;
         return info;
+    }
+
+    public string? GetInstallPath(string serverId)
+    {
+        return _servers.TryGetValue(serverId, out var server) ? server.InstallPath : null;
     }
 
     private class ManagedServer
