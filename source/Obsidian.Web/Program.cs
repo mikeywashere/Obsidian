@@ -9,7 +9,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// Configure API HttpClient for backend services
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
 
 // Configure Microsoft Authentication
 // Note: To enable authentication, configure the AzureAd section in wwwroot/appsettings.json
@@ -37,6 +39,7 @@ builder.Services.AddAuthorizationCore(options =>
 });
 
 // Register services
-builder.Services.AddScoped<IServerService, MockServerService>();
+builder.Services.AddScoped<IServerService, HttpServerService>();
+builder.Services.AddScoped<IServerPropertiesService, HttpServerPropertiesService>();
 
 await builder.Build().RunAsync();

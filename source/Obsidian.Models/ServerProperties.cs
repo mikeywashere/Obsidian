@@ -1,273 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
-namespace Obsidian
-{
-    /// <summary>
-    /// Represents difficulty levels in Minecraft Bedrock server.
-    /// </summary>
+namespace Obsidian.Models;
     public enum Difficulty
     {
-        /// <summary>
-        /// Peaceful difficulty - no hostile mobs spawn and hunger is disabled.
-        /// </summary>
         Peaceful,
         
-        /// <summary>
-        /// Easy difficulty - mobs deal less damage and hunger depletes slowly.
-        /// </summary>
         Easy,
         
-        /// <summary>
-        /// Normal difficulty - standard gameplay balance.
-        /// </summary>
         Normal,
         
-        /// <summary>
-        /// Hard difficulty - mobs deal more damage and hunger depletes faster.
-        /// </summary>
         Hard
     }
 
-    /// <summary>
-    /// Represents game modes in Minecraft Bedrock server.
-    /// </summary>
     public enum GameMode
     {
-        /// <summary>
-        /// Survival mode - Players need to gather resources, manage hunger, and can take damage.
-        /// </summary>
         Survival,
         
-        /// <summary>
-        /// Creative mode - Players have unlimited resources and can fly.
-        /// </summary>
         Creative,
         
-        /// <summary>
-        /// Adventure mode - Players cannot break blocks directly, designed for custom maps.
-        /// </summary>
         Adventure
     }
 
     public class ServerProperties
     {
-        /// <summary>
-        /// The name of the server displayed to players.
-        /// </summary>
         public string ServerName { get; set; } = "Dedicated Server";
 
-        /// <summary>
-        /// Game mode for new players.
-        /// </summary>
         public GameMode GameMode { get; set; } = GameMode.Survival;
 
-        /// <summary>
-        /// Whether to force the gamemode specified in server properties.
-        /// </summary>
         public bool ForceGameMode { get; set; } = false;
 
-        /// <summary>
-        /// World difficulty level.
-        /// </summary>
         public Difficulty Difficulty { get; set; } = Difficulty.Easy;
 
-        /// <summary>
-        /// Whether cheats/commands are allowed.
-        /// </summary>
         public bool AllowCheats { get; set; } = false;
 
-        /// <summary>
-        /// Maximum number of players that can join the server.
-        /// </summary>
         public int MaxPlayers { get; set; } = 10;
 
-        /// <summary>
-        /// If true, players must authenticate to Xbox Live.
-        /// </summary>
         public bool OnlineMode { get; set; } = true;
 
-        /// <summary>
-        /// If true, players must be in the allowlist.json file to join.
-        /// </summary>
         public bool AllowList { get; set; } = false;
 
-        /// <summary>
-        /// The IPv4 port the server will listen on.
-        /// </summary>
         public int ServerPort { get; set; } = 19132;
 
-        /// <summary>
-        /// The IPv6 port the server will listen on.
-        /// </summary>
         public int ServerPortV6 { get; set; } = 19133;
 
-        /// <summary>
-        /// Whether server appears in LAN game lists.
-        /// </summary>
         public bool EnableLanVisibility { get; set; } = true;
 
-        /// <summary>
-        /// Maximum view distance in chunks.
-        /// </summary>
         public int ViewDistance { get; set; } = 32;
 
-        /// <summary>
-        /// Distance in chunks from players that the world will be ticked.
-        /// </summary>
         public int TickDistance { get; set; } = 4;
 
-        /// <summary>
-        /// Minutes a player can idle before being kicked. 0 for no timeout.
-        /// </summary>
         public int PlayerIdleTimeout { get; set; } = 30;
 
-        /// <summary>
-        /// Maximum threads the server will use.
-        /// </summary>
         public int MaxThreads { get; set; } = 8;
 
-        /// <summary>
-        /// Name of the world/level.
-        /// </summary>
         public string LevelName { get; set; } = "Bedrock level";
 
-        /// <summary>
-        /// Seed used to generate the world.
-        /// </summary>
         public string LevelSeed { get; set; } = "";
 
-        /// <summary>
-        /// Default permission level for new players.
-        /// Valid values: "visitor", "member", "operator"
-        /// </summary>
         public string DefaultPlayerPermissionLevel { get; set; } = "member";
 
-        /// <summary>
-        /// Whether to require clients to use the server's texture packs.
-        /// </summary>
         public bool TexturePackRequired { get; set; } = false;
 
-        /// <summary>
-        /// Whether to log content errors to a file.
-        /// </summary>
         public bool ContentLogFileEnabled { get; set; } = false;
 
-        /// <summary>
-        /// Smallest size of raw network payload to compress.
-        /// </summary>
         public int CompressionThreshold { get; set; } = 1;
 
-        /// <summary>
-        /// Compression algorithm for networking. Valid values: "zlib", "snappy"
-        /// </summary>
         public string CompressionAlgorithm { get; set; } = "zlib";
 
-        /// <summary>
-        /// Whether to use strict server-authoritative movement.
-        /// </summary>
         public bool ServerAuthoritativeMovementStrict { get; set; } = false;
 
-        /// <summary>
-        /// Whether to use strict server-authoritative dismount.
-        /// </summary>
         public bool ServerAuthoritativeDismountStrict { get; set; } = false;
 
-        /// <summary>
-        /// Whether to use strict server-authoritative entity interactions.
-        /// </summary>
         public bool ServerAuthoritativeEntityInteractionsStrict { get; set; } = false;
 
-        /// <summary>
-        /// Tolerance for discrepancies between client and server player positions.
-        /// </summary>
         public float PlayerPositionAcceptanceThreshold { get; set; } = 0.5f;
 
-        /// <summary>
-        /// Threshold for difference between attack direction and look direction.
-        /// </summary>
         public float PlayerMovementActionDirectionThreshold { get; set; } = 0.85f;
 
-        /// <summary>
-        /// Scalar for server-authoritative block breaking pick range.
-        /// </summary>
         public float ServerAuthoritativeBlockBreakingPickRangeScalar { get; set; } = 1.5f;
 
-        /// <summary>
-        /// Chat restriction level. Valid values: "None", "Dropped", "Disabled"
-        /// </summary>
         public string ChatRestriction { get; set; } = "None";
 
-        /// <summary>
-        /// Whether player interaction is disabled.
-        /// </summary>
         public bool DisablePlayerInteraction { get; set; } = false;
 
-        /// <summary>
-        /// Whether client-side chunk generation is enabled.
-        /// </summary>
         public bool ClientSideChunkGenerationEnabled { get; set; } = true;
 
-        /// <summary>
-        /// Whether to use hash-based block network IDs.
-        /// </summary>
         public bool BlockNetworkIdsAreHashes { get; set; } = true;
 
-        /// <summary>
-        /// Whether persona features are disabled.
-        /// </summary>
         public bool DisablePersona { get; set; } = false;
 
-        /// <summary>
-        /// Whether custom skins are disabled.
-        /// </summary>
         public bool DisableCustomSkins { get; set; } = false;
 
-        /// <summary>
-        /// Server build radius ratio. "Disabled" or a value between 0.0 and 1.0.
-        /// </summary>
         public string ServerBuildRadiusRatio { get; set; } = "Disabled";
 
-        /// <summary>
-        /// Whether outbound script debugging is allowed.
-        /// </summary>
         public bool AllowOutboundScriptDebugging { get; set; } = false;
 
-        /// <summary>
-        /// Whether inbound script debugging is allowed.
-        /// </summary>
         public bool AllowInboundScriptDebugging { get; set; } = false;
 
-        /// <summary>
-        /// Whether to enable UDP proxy for packet interception.
-        /// </summary>
         public bool EnableUdpProxy { get; set; } = false;
 
-        /// <summary>
-        /// The port the UDP proxy should listen on.
-        /// </summary>
         public int UdpProxyListenPort { get; set; } = 19134;
 
-        /// <summary>
-        /// The destination host to forward UDP packets to.
-        /// </summary>
         public string UdpProxyDestinationHost { get; set; } = "127.0.0.1";
 
-        /// <summary>
-        /// The destination port to forward UDP packets to.
-        /// </summary>
         public int UdpProxyDestinationPort { get; set; } = 19132;
 
-        /// <summary>
-        /// Converts a string to the corresponding Difficulty enum value.
-        /// </summary>
-        /// <param name="value">The difficulty as a string (case-insensitive)</param>
-        /// <returns>The matching Difficulty enum value</returns>
-        /// <exception cref="ArgumentException">Thrown when the string doesn't match any valid difficulty</exception>
         public static Difficulty ParseDifficulty(string value)
         {
             return value.ToLowerInvariant() switch
@@ -280,22 +117,11 @@ namespace Obsidian
             };
         }
         
-        /// <summary>
-        /// Converts a Difficulty enum value to its corresponding string representation.
-        /// </summary>
-        /// <param name="difficulty">The difficulty enum value</param>
-        /// <returns>The string representation of the difficulty</returns>
         public static string DifficultyToString(Difficulty difficulty)
         {
             return difficulty.ToString().ToLowerInvariant();
         }
 
-        /// <summary>
-        /// Converts a string to the corresponding GameMode enum value.
-        /// </summary>
-        /// <param name="value">The game mode as a string (case-insensitive)</param>
-        /// <returns>The matching GameMode enum value</returns>
-        /// <exception cref="ArgumentException">Thrown when the string doesn't match any valid game mode</exception>
         public static GameMode ParseGameMode(string value)
         {
             return value.ToLowerInvariant() switch
@@ -307,22 +133,11 @@ namespace Obsidian
             };
         }
         
-        /// <summary>
-        /// Converts a GameMode enum value to its corresponding string representation.
-        /// </summary>
-        /// <param name="gameMode">The game mode enum value</param>
-        /// <returns>The string representation of the game mode</returns>
         public static string GameModeToString(GameMode gameMode)
         {
             return gameMode.ToString().ToLowerInvariant();
         }
 
-        /// <summary>
-        /// Loads server properties from the specified file path.
-        /// </summary>
-        /// <param name="filePath">Path to the server.properties file.</param>
-        /// <returns>A populated ServerProperties instance.</returns>
-        /// <exception cref="FileNotFoundException">Thrown if the properties file doesn't exist.</exception>
         public static ServerProperties Load(string filePath)
         {
             if (!File.Exists(filePath))
@@ -394,10 +209,6 @@ namespace Obsidian
             return properties;
         }
         
-        /// <summary>
-        /// Saves the current server properties to the specified file path.
-        /// </summary>
-        /// <param name="filePath">Path to the server.properties file.</param>
         public void Save(string filePath)
         {
             var lines = new List<string>
@@ -448,4 +259,4 @@ namespace Obsidian
             File.WriteAllLines(filePath, lines);
         }
     }
-}
+

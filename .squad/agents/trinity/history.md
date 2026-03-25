@@ -10,7 +10,7 @@
 
 <!-- Append learnings below -->
 
-### 2026-03-20: Frontend HTTP Client Layer Complete
+### 2026-03-25: Frontend HTTP Client Layer Complete
 
 **Created HTTP Services:**
 - `HttpServerService` implements `IServerService` for server CRUD/control operations
@@ -21,9 +21,25 @@
 - API base URL configured via `appsettings.json` with fallback to `https://localhost:5001/`
 - Registered dedicated API `HttpClient` in DI container (separate from WASM base client)
 - Added SignalR Client package (v9.0.14) for future real-time features
-- Added project reference to core `Obsidian` project for `ServerProperties` model access
 
-**Architecture:**
+**Architecture Decision - ServerProperties in Models:**
+- Copied `ServerProperties` from console Obsidian project to `Obsidian.Models` project
+- Updated namespace from `Obsidian` to `Obsidian.Models`
+- Removed XML documentation comments per project style guide
+- This allows sharing the model between frontend (Blazor WASM) and backend (API)
+- Console Obsidian project retains its own copy to avoid executable reference issues
+
+**Services Registered:**
 - Replaced `MockServerService` with production `HttpServerService`
-- All MSAL auth and authorization policies preserved unchanged
-- HTTP services ready for Neo's API endpoints at `/api/servers/*`
+### 2026-03-25: Full Solution Build Succeeded
+
+The complete Obsidian solution compiled successfully with 0 errors and 0 warnings across all 6 projects:
+- Obsidian.Api (backend, created by Neo)
+- Obsidian.Models
+- Obsidian (core)
+- Obsidian.Web (frontend, updated)
+- Obsidian.Models.Tests
+- Obsidian.Tests
+
+Frontend HTTP services integrated with Neo's backend API. System ready for end-to-end integration testing and real-time log streaming via SignalR.
+
