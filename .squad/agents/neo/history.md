@@ -86,3 +86,22 @@ Added event-driven architecture for broadcasting server logs to connected client
 - `Hubs\ServerLogHub.cs` — SignalR hub for client connections
 - `Hubs\ServerLogBroadcaster.cs` — Event bridge to SignalR
 
+### 2026-05-28: Upgraded entire solution to .NET 10
+
+Upgraded all projects from net9.0 to net10.0 and updated all Microsoft.* packages to 10.x equivalents.
+
+**Projects upgraded:**
+- `Obsidian` — net10.0, Microsoft.Extensions.Http 10.0.5, Microsoft.Playwright 1.58.0 (removed System.IO.Pipelines — now in BCL)
+- `Obsidian.Api` — net10.0, Microsoft.AspNetCore.OpenApi 10.0.5
+- `Obsidian.DataAccess` — net10.0, EF Core 10.0.5, EF Core Sqlite 10.0.5, Npgsql 10.0.1
+- `Obsidian.Models` — net10.0 (no package changes)
+- `Obsidian.UnitTests` — net10.0, coverlet.collector 8.0.1, Auth 10.0.5, Http 10.0.5, TestSdk 18.3.0, xunit.runner 3.1.5
+- `Obsidian.Web` — net10.0, all Blazor WASM + SignalR.Client + MSAL packages to 10.0.5
+
+**CI workflow (dotnet.yml):**
+- `dotnet-version: 9.0.x` → `10.0.x`
+- Playwright install path: `net9.0` → `net10.0`
+
+**Result:** `dotnet build` succeeded (0 errors). All 51 tests passed.
+
+**SDK used:** 10.0.201 (already installed on the machine)
