@@ -21,7 +21,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 9.0.x
     
     - uses: actions/setup-node@v4
       with:
@@ -46,6 +46,9 @@ jobs:
     
     - name: Build
       run: dotnet build --no-restore
+    
+    - name: Install .NET Playwright browsers
+      run: pwsh source/Obsidian.UnitTests/bin/Debug/net9.0/playwright.ps1 install chromium
     
     - name: Test
       run: dotnet test --no-build --verbosity normal
