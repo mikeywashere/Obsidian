@@ -41,5 +41,6 @@ builder.Services.AddAuthorizationCore(options =>
 // Register services
 builder.Services.AddScoped<IServerService, HttpServerService>();
 builder.Services.AddScoped<IServerPropertiesService, HttpServerPropertiesService>();
+builder.Services.AddScoped<IServerPlayerService, HttpServerPlayerService>();
 
 await builder.Build().RunAsync();
