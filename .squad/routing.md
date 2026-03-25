@@ -6,12 +6,14 @@ How to decide who handles what.
 
 | Work Type | Route To | Examples |
 |-----------|----------|----------|
-| {domain 1} | {Name} | {example tasks} |
-| {domain 2} | {Name} | {example tasks} |
-| {domain 3} | {Name} | {example tasks} |
-| Code review | {Name} | Review PRs, check quality, suggest improvements |
-| Testing | {Name} | Write tests, find edge cases, verify fixes |
-| Scope & priorities | {Name} | What to build next, trade-offs, decisions |
+| Architecture & system design | Morpheus | Cross-layer decisions, patterns, refactoring strategy, onboarding |
+| Backend C# / API / server | Neo | ASP.NET Core endpoints, UDP proxy, process lifecycle, service layer |
+| Frontend Blazor / UI | Trinity | Razor components, WASM pages, CSS, client-side state, Playwright E2E |
+| Data access / auth | Tank | EF Core migrations, repositories, Azure AD/MSAL, RBAC policy |
+| CI/CD / infrastructure | Keaton | GitHub Actions, build pipelines, Docker, deployment automation |
+| Code review | Morpheus | Review PRs, check quality, enforce architectural gates |
+| Testing | Oracle | Write xUnit tests, NSubstitute mocks, find edge cases, verify fixes |
+| Scope & priorities | Morpheus | What to build next, trade-offs, decisions |
 | Async issue work (bugs, tests, small features) | @copilot 🤖 | Well-defined tasks matching capability profile |
 | Session logging | Scribe | Automatic — never needs routing |
 

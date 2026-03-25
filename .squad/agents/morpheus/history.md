@@ -29,6 +29,43 @@
 
 **Work Breakdown Created:** Task assignments for Neo (Backend) and Trinity (Frontend)
 
+### 2026-03-25 — Player Tracking Architecture Decision
+
+**Task:** Design architecture for tracking connected players and positions in Minecraft Bedrock worlds.
+
+**Request:** Michael wanted to intercept traffic to track players. Suggested using YARP.
+
+**Analysis:**
+1. **YARP not applicable** — YARP is HTTP reverse proxy; Bedrock uses RakNet over UDP
+2. **UDP inspection blocked by encryption** — MCPE encrypts after login handshake with AES-256-CFB8
+3. **Log parsing is viable** — Server stdout contains player connect/disconnect/spawn messages
+4. **Already have infrastructure** — `ServerManager.LogReceived` event provides data stream
+
+**Decision Made:** ADR-004 in `.squad/decisions/inbox/morpheus-player-tracking-architecture.md`
+
+**Recommendation: Approach A (Log-Based Player Tracking)**
+- Parse server stdout for player events via regex
+- Simple (~50 lines), reliable, no encryption concerns
+- Position data on spawn only (not real-time movement)
+- 90% value at 5% complexity vs UDP packet inspection
+
+**Key Findings:**
+- Bedrock logs: `Player connected: Steve, xuid: 1234567890123456`
+- Bedrock logs: `Player Spawned: Steve xance: 123.5, yance: 64.0, zance: -456.2`
+- UDP position packets are encrypted — would need full ECDH key exchange + AES implementation
+- RCON not available on Bedrock (unlike Java Edition)
+
+**Work Breakdown:**
+- **Neo:** PlayerTracker service, PlayerInfo model, /api/servers/{id}/players endpoint, SignalR events
+- **Trinity:** PlayerPanel.razor component, wire SignalR player events
+- **Tank:** Unit tests for log parsing regex, integration tests for API
+
+**Architecture:**
+- `IPlayerTracker` service subscribes to `IServerManager.LogReceived`
+- Maintains `ConcurrentDictionary<serverId, Dictionary<xuid, PlayerInfo>>`
+- Fires `PlayerStateChanged` events for SignalR broadcast
+- UdpProxy kept separate — not needed for log-based tracking
+
 ## Learnings
 
 <!-- Append learnings below -->

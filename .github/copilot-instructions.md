@@ -1,3 +1,36 @@
+## Squad Team
+
+This project uses **Squad** — an AI team framework. See `.squad/` for full configuration.
+
+### Team Roster
+
+| Name | Role | Charter |
+|------|------|---------|
+| Morpheus | Tech Lead | `.squad/agents/morpheus/charter.md` |
+| Neo | Backend Dev | `.squad/agents/neo/charter.md` |
+| Trinity | Frontend Dev | `.squad/agents/trinity/charter.md` |
+| Tank | Data Engineer | `.squad/agents/tank/charter.md` |
+| Oracle | Tester | `.squad/agents/oracle/charter.md` |
+| Keaton | DevOps Engineer | `.squad/agents/keaton/charter.md` |
+| Scribe | Session Logger | `.squad/agents/scribe/charter.md` |
+
+### Routing Summary
+
+| Work Type | Agent |
+|-----------|-------|
+| Architecture & system design | Morpheus |
+| Backend C# / API / server | Neo |
+| Frontend Blazor / UI | Trinity |
+| Data access / auth | Tank |
+| CI/CD / infrastructure | Keaton |
+| Code review | Morpheus |
+| Testing | Oracle |
+| Session logging | Scribe (silent) |
+
+See `.squad/routing.md` for full routing rules and issue label conventions.
+
+---
+
 ## Playwright test requirements
 
 When writing Playwright tests, please follow these guidelines to ensure consistency and maintainability:
