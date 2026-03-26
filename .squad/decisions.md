@@ -209,6 +209,330 @@ Blazor WASM UI for real-time log streaming and server.properties editing.
 
 ---
 
+### ADR-009: .NET Aspire Structure for Obsidian
+
+**Date:** 2026-03-26  
+**Author:** Morpheus (Lead / Architect)  
+**Status:** Implemented  
+
+The Obsidian solution needed .NET Aspire orchestration to manage service discovery, telemetry, and distributed application hosting. .NET Aspire provides standardized patterns for cloud-native .NET applications.
+
+**Created Projects:**
+
+**1. Obsidian.ServiceDefaults** — Shared configuration library
+- `AddServiceDefaults()` extension method for `IHostApplicationBuilder`
+- `MapDefaultEndpoints()` extension method for `WebApplication`
+- OpenTelemetry logging, metrics, and tracing
+- Health check endpoints: `/health` and `/alive`
+- HTTP client resilience with retry policies
+- Service discovery support
+
+**2. Obsidian.AppHost** — Distributed application orchestrator
+- Orchestrates `Obsidian.Api` backend service
+- Configures SQLite connection string via parameter
+- `Obsidian.Web` (Blazor WASM) NOT orchestrated — runs separately in browser
+
+**Key Decisions:**
+- NuGet packages instead of deprecated workload
+- WASM not orchestrated (client-side only)
+- SQLite parameter-based (no managed database resource)
+
+**Consequences:** Standardized telemetry, health checks, resilience, service discovery, cloud-ready OTLP export.
+
+---
+
+### ADR-010: Authentication Restricted to Personal Microsoft Accounts
+
+**Date:** 2026-05-28  
+**Author:** Neo (Backend Dev)  
+**Status:** Implemented  
+
+Changed Microsoft Authentication from multi-tenant (`common`) to personal accounts only (`consumers`).
+
+**Changes:**
+- API `appsettings.json`: `"TenantId": "consumers"`
+- Web `appsettings.json`: `"Authority": "https://login.microsoftonline.com/consumers"`
+- **Critical:** `ValidateIssuer = false` (required for personal accounts — they use different issuers)
+- Azure Portal app registration must be set to "Personal Microsoft accounts only"
+
+**Identity Claims for Personal Accounts:**
+- Stable identifier: `sub` claim (subject)
+- Object ID: `oid` claim
+- `AdminOverrideClaimsTransformation` reads `oid` first, falls back to `sub`
+
+**Impact:**
+- ✅ Build: 0 errors, 113 tests pass
+- ⚠️ Organizational accounts can no longer sign in (intentional)
+- Requires Azure portal configuration change
+
+---
+
+### ADR-011: Blazor WASM Aspire Service Discovery Integration
+
+**Date:** 2026-12-29  
+**Author:** Trinity (Frontend Developer)  
+**Status:** Implemented  
+
+Configured Blazor WASM to use Aspire service discovery via environment variable injection, with graceful fallback to appsettings.json.
+
+**API URL Resolution Order:**
+1. Check for Aspire HTTPS endpoint (`services:obsidian-api:https:0`)
+2. Check for Aspire HTTP endpoint (`services:obsidian-api:http:0`)
+3. Fall back to `ApiBaseUrl` in appsettings.json
+4. Final hardcoded fallback
+
+**Why AddServiceDiscovery() is NOT Available:**
+- Blazor WASM runs entirely in the browser
+- No access to service discovery infrastructure
+- Configuration binding via `IConfiguration` is sufficient
+
+**Benefits:**
+- ✅ Works in Aspire (auto-discovers API from AppHost)
+- ✅ Works standalone (fallback to appsettings.json)
+- ✅ No runtime dependencies
+- ✅ Standard Aspire pattern for WASM apps
+
+**Constraint:** URLs resolved at startup only (acceptable for WASM).
+
+---
+
+### ADR-012: Neo — Aspire API Integration
+
+**Date:** 2026-05-28  
+**Author:** Neo (Backend Dev)  
+**Status:** Implemented  
+
+Integrated `Obsidian.Api` with `Obsidian.ServiceDefaults` for observability.
+
+**Implementation:**
+```csharp
+// Program.cs — after CreateBuilder
+builder.AddServiceDefaults();
+
+// Program.cs — middleware pipeline
+app.MapDefaultEndpoints();
+
+// Added health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddDbContextCheck<ObsidianDbContext>("database");
+```
+
+**What We Get:**
+- OpenTelemetry traces, metrics, logs
+- Service discovery for Aspire
+- Resilience handlers
+- Health endpoints: `GET /health`, `GET /alive`
+
+**Why This Way:**
+- Minimal code change (2 extension method calls)
+- Standard Aspire pattern
+- EF Core health check validates database
+- No breaking changes (113 tests pass)
+
+---
+
+### ADR-013: Neo → Trinity Auth API Contract
+
+**Date:** 2026-05-28  
+**Author:** Neo (Backend Dev)  
+
+All protected endpoints require JWT bearer token: `Authorization: Bearer <access_token>`
+
+**Token Validation:**
+- Authority: `{AzureAd:Instance}{AzureAd:TenantId}` (default: `https://login.microsoftonline.com/common`)
+- Audience: `AzureAd:Audience` (set to API's ClientId)
+- Issuer validation: disabled (multi-tenant support)
+
+**Policies:**
+| Policy | Required Role(s) |
+|--------|-----------------|
+| `RequireUser` | `User`, `Admin`, or `SystemAdmin` |
+| `RequireAdmin` | `Admin` or `SystemAdmin` |
+| `RequireSystemAdmin` | `SystemAdmin` only |
+
+**AdminController (`/api/admin`) — All endpoints require `RequireSystemAdmin`:**
+
+- `GET /api/admin/users` — Returns all local admin overrides (empty array `[]` if none exist)
+- `POST /api/admin/users` — Grants local admin role
+  - Request: `{ "objectId", "displayName", "role" }` (`role` must be "Admin" or "SystemAdmin")
+  - `GrantedBy` and `GrantedAt` set server-side (not trusted from client)
+  - Returns `201 Created` on success, `409 Conflict` if duplicate
+- `DELETE /api/admin/users/{objectId}` — Removes override, returns `204 No Content`
+
+**How `AdminOverrideClaimsTransformation` Works:**
+1. Reads `oid` claim (falls back to `sub`)
+2. Looks up `UserAdminOverrides` in SQLite
+3. If found, adds `ClaimTypes.Role` claim for that role
+
+**Frontend Notes:**
+- `GrantedBy` in POST will be **overwritten** server-side (use token `oid`/`sub`)
+- `401 Unauthorized` / `403 Forbidden` returned for policy failures
+
+---
+
+### ADR-014: ADR-008 Local Kubernetes Deployment Architecture
+
+**Date:** 2026-06-14  
+**Author:** Morpheus (Lead / Architect)  
+**Status:** Approved — Ready for Implementation  
+
+Full Kubernetes deployment architecture for local clusters (minikube, kind, Docker Desktop).
+
+**Core Decisions:**
+
+**1. Container Strategy — Hand-Crafted Dockerfiles**
+- Explicit Dockerfiles (portable, version-controlled)
+- Multi-stage builds minimize image size
+- AppHost continues for local dev; k8s uses separate manifests
+
+**2. Database — SQLite + PVC (Default)**
+- Local k8s = single node, single replica
+- PVC ensures data survives pod restarts
+- PostgreSQL documented as upgrade path
+
+**3. Manifest Strategy — Helm Chart**
+- `helm/obsidian/` at repository root
+- `values.yaml` parameterizes image tags, replicas, ingress, env vars
+- `helm upgrade --install` is idempotent
+
+**4. AppHost Role — Local Development Only**
+- Never deployed to Kubernetes
+- Local dev: `dotnet run --project source/Obsidian.AppHost`
+- K8s: Separate pods configured via Helm + env vars
+
+**5. Ingress — nginx Ingress Controller**
+- Host routing: `obsidian.local` (Web) and `api.obsidian.local` (API)
+- WebSocket support for SignalR (3600s timeout annotations)
+- User must add to hosts file: `127.0.0.1 obsidian.local api.obsidian.local`
+
+**6. Blazor WASM Container — nginx + Runtime Config Injection**
+- Multi-stage: .NET SDK publish → nginx:alpine
+- `entrypoint.sh` performs `envsubst` on `appsettings.json` before nginx starts
+- Published `appsettings.json` renamed to `.template` with `${API_URL}` placeholder
+
+**File Layout:**
+```
+helm/obsidian/                          # Helm chart
+  Chart.yaml, values.yaml, templates/
+  - namespace.yaml, configmap.yaml, secrets.yaml
+  - api/, web/, db/ (deployments, services, PVC)
+  - ingress.yaml
+source/
+  Obsidian.Api/Dockerfile               # Multi-stage, non-root user, /data PVC
+  Obsidian.Web/Dockerfile               # Multi-stage → nginx:alpine
+  Obsidian.Web/nginx.conf               # SPA routing, WASM MIME types, gzip, security headers
+  Obsidian.Web/entrypoint.sh            # envsubst API_URL → appsettings.json
+scripts/
+  deploy-local.ps1                      # Windows PowerShell (minikube/kind/Docker Desktop detection)
+  deploy-local.sh                       # bash (Linux/macOS)
+```
+
+**Dockerfile Specifications:**
+
+**Obsidian.Api/Dockerfile:**
+- Build context: repo root
+- Non-root user (appuser)
+- `/data` volume for SQLite mount
+- Port 8080, ASPNETCORE_URLS=http://+:8080
+- No HTTPS (TLS terminates at ingress)
+
+**Obsidian.Web/Dockerfile:**
+- Build stage: .NET SDK publish
+- Runtime stage: nginx:alpine + gettext (envsubst)
+- Copies published WASM to nginx `wwwroot`
+- Renames `appsettings.json` to `.template`
+- Runs `nginx.conf` + `entrypoint.sh`
+
+**nginx.conf:**
+- SPA fallback: `try_files $uri $uri/ /index.html`
+- Cache WASM/DLL/static assets: `expires 1y`
+- Security headers (X-Frame-Options, X-Content-Type-Options)
+- Gzip compression for WASM
+
+**entrypoint.sh:**
+```bash
+API_URL="${API_URL:-http://api.obsidian.local}"
+sed -i "s|\"ApiBaseUrl\": \"[^\"]*\"|\"ApiBaseUrl\": \"${API_URL}/\"|g" \
+    /usr/share/nginx/html/appsettings.json
+exec nginx -g 'daemon off;'
+```
+
+**Helm Chart Details:**
+
+**values.yaml:**
+```yaml
+namespace: obsidian
+api:
+  image: obsidian-api:latest (pullPolicy: Never)
+  replicas: 1, port: 8080
+  env:
+    ASPNETCORE_ENVIRONMENT: Production
+    ConnectionStrings__DefaultConnection: "Data Source=/data/obsidian.db"
+    AzureAd__Instance: "https://login.microsoftonline.com/"
+    AzureAd__TenantId: "consumers"
+    AzureAd__Audience: "" (set via --set or secrets)
+    AzureAd__ClientId: "" (set via --set or secrets)
+    CORS__AllowedOrigins: "http://obsidian.local"
+web:
+  image: obsidian-web:latest (pullPolicy: Never)
+  replicas: 1, port: 80
+  env:
+    API_URL: "http://api.obsidian.local"
+database:
+  type: sqlite
+  sqlite:
+    pvc:
+      size: 1Gi
+```
+
+**Ingress Annotations (WebSocket support):**
+```yaml
+nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+nginx.ingress.kubernetes.io/upstream-hash-by: "$arg_id"
+```
+
+**Deployment Scripts:**
+
+**deploy-local.ps1 / deploy-local.sh:**
+1. Preflight checks (kubectl, helm, docker)
+2. Detect cluster type (minikube / kind / Docker Desktop)
+3. Build images:
+   - `docker build -f source/Obsidian.Api/Dockerfile -t obsidian-api:latest .`
+   - `docker build -f source/Obsidian.Web/Dockerfile -t obsidian-web:latest .`
+4. Load images into cluster
+5. Install/upgrade via Helm:
+   - `helm upgrade --install obsidian ./helm/obsidian --namespace obsidian --create-namespace --set api.env.AzureAd__ClientId=$ClientId`
+6. Wait for rollout
+7. Print hosts file instructions
+
+**CORS Configuration Requirement:**
+
+API's `Program.cs` must support configurable origins (prerequisite):
+```csharp
+var allowedOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins")
+    .Get<string[]>() ?? ["https://localhost:7001", "http://localhost:5002"];
+policy.WithOrigins(allowedOrigins)
+```
+
+**PostgreSQL Upgrade Path (Future):**
+- Add PostgreSQL StatefulSet template
+- Update connection string to `Host=obsidian-postgresql;...`
+- Make `Program.cs` database provider configurable
+
+---
+
+### User Directive: Authentication — Personal Accounts Only
+
+**Date:** 2026-03-26  
+**By:** Michael R. Schmidt (via Copilot)  
+
+Authentication must target **personal Microsoft accounts only** (outlook.com, hotmail.com, live.com) — NOT corporate/organizational Azure AD accounts.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
