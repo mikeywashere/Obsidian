@@ -211,3 +211,26 @@ Added protocol-aware parsing layer to the existing `UdpProxy`. Parses the RakNet
 - Offline message ID magic is not validated (not required for type identification)
 
 **Result:** Build 0 errors/warnings (6 pre-existing NU warnings). All 72 tests pass.
+
+### 2026-05-28: Switched Microsoft Auth from Corporate to Personal Accounts Only
+
+Changed authentication configuration to target personal Microsoft accounts only (consumers) instead of common (any account).
+
+**Changes Made:**
+- `source/Obsidian.Api/appsettings.json` — changed `TenantId` from `"common"` to `"consumers"`
+- `source/Obsidian.Web/wwwroot/appsettings.json` — changed `Authority` from `https://login.microsoftonline.com/common` to `https://login.microsoftonline.com/consumers`
+- `source/Obsidian.Api/Program.cs` — commented out `AddServiceDefaults()` and `MapDefaultEndpoints()` (ServiceDefaults project not available); confirmed `ValidateIssuer = false` remains in JWT config
+- `AUTHENTICATION.md` — added Azure portal configuration section for personal accounts
+
+**Technical Context:**
+- `consumers` tenant restricts authentication to outlook.com, hotmail.com, live.com (personal Microsoft accounts)
+- Blocks corporate/organizational Azure AD / Entra ID accounts
+- Personal MSA tokens use different issuers (`https://login.live.com` or `https://sts.windows.net/9188040d-6c67-4c5b-b112-36a304b66dad/`)
+- `ValidateIssuer = false` is critical — issuer doesn't match the authority for personal accounts
+- `sub` claim is the stable identifier for personal accounts; `oid` may also be present
+
+**Azure Portal Configuration:**
+- App registrations → Authentication → Supported account types → "Personal Microsoft accounts only"
+- This setting must match the `consumers` tenant configuration
+
+**Result:** Build 0 errors. All 113 tests pass.
