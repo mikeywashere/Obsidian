@@ -8,6 +8,8 @@ using Obsidian.Models.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// builder.AddServiceDefaults(); // Commented out - ServiceDefaults project not available
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -31,6 +33,11 @@ builder.Services.AddSignalR();
 // Database
 builder.Services.AddDbContext<ObsidianDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=obsidian.db"));
+
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+    .AddDbContextCheck<ObsidianDbContext>("database");
 
 // Authentication — validate Azure AD JWT bearer tokens
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -72,6 +79,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// app.MapDefaultEndpoints(); // Commented out - ServiceDefaults project not available
 
 app.UseAuthentication();
 app.UseAuthorization();
