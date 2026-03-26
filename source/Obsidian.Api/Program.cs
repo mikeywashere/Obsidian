@@ -8,7 +8,7 @@ using Obsidian.Models.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.AddServiceDefaults(); // Commented out - ServiceDefaults project not available
+builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -80,7 +80,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// app.MapDefaultEndpoints(); // Commented out - ServiceDefaults project not available
+app.MapDefaultEndpoints();
 
 app.UseAuthentication();
 app.UseAuthorization();
