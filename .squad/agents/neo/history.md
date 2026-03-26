@@ -143,3 +143,40 @@ Added log-based player tracking using Minecraft Bedrock server stdout event pars
 
 **Result:** Build 0 errors. All 68 tests pass (51 existing + 13 new + 4 PlayersController).
 
+### 2026-05-28: Added RakNet/Minecraft Bedrock Packet Parsing to UdpProxy
+
+Added protocol-aware parsing layer to the existing `UdpProxy`. Parses the RakNet framing layer and pre-login Minecraft game packets; encrypted post-login game packets are identified but not decrypted (AES-256-CFB8, ECDH key exchange — Morpheus constraint).
+
+**New Files:**
+- `source/Obsidian/RakNetPacketType.cs` — enum of all known RakNet packet IDs
+- `source/Obsidian/ParsedPacket.cs` — immutable record carrying parsed fields
+- `source/Obsidian/RakNetParser.cs` — static parser using `BinaryPrimitives`; never throws
+
+**Modified Files:**
+- `IUdpProxy.cs` — added `ParsedPacketEventArgs` and `PacketParsed` event
+- `UdpProxy.cs` — fires `PacketParsed` after both client→server and server→client forwarding (subscriber guard = zero-cost when unused)
+- `UdpProxyExample.cs` — added `PacketParsed` subscriber example printing type, MOTD, players, world, sequence number
+
+**Packet types handled:**
+| ID | Type | Parsed fields |
+|----|------|---------------|
+| 0x01 | UnconnectedPing | type only |
+| 0x1c | UnconnectedPong | MOTD, playerCount, maxPlayers, worldName, gameMode |
+| 0x05 | OpenConnectionRequest1 | type only |
+| 0x06 | OpenConnectionReply1 | type only |
+| 0x07 | OpenConnectionRequest2 | type only |
+| 0x08 | OpenConnectionReply2 | type only |
+| 0x13 | NewIncomingConnection | type only |
+| 0x15 | DisconnectNotification | type only |
+| 0xc0 | Ack | type only |
+| 0xa0 | Nack | type only |
+| 0x80–0x8f | DataPacket | 3-byte LE sequence number |
+| 0xfe | GamePacket | IsEncrypted=false (indeterminate without login state tracking) |
+| other | Unknown | raw bytes |
+
+**Limitations:**
+- `GamePacket.IsEncrypted` is always `false` — determining encryption state requires tracking the login handshake sequence, which is out of scope
+- No encapsulated-packet parsing inside DataPacket frames (reliability layer)
+- Offline message ID magic is not validated (not required for type identification)
+
+**Result:** Build 0 errors/warnings (6 pre-existing NU warnings). All 72 tests pass.
