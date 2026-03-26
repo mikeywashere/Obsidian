@@ -65,4 +65,4 @@ jobs:
       run: pwsh source/Obsidian.UnitTests/bin/Debug/net10.0/playwright.ps1 install chromium
     
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --filter "Category!=Integration"

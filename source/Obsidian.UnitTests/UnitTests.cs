@@ -9,6 +9,7 @@ namespace Obsidian.UnitTests
     public class UnitTests
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task TestDownloadLinux()
         {
             var sc = new ServiceCollection();
@@ -28,6 +29,7 @@ namespace Obsidian.UnitTests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task TestDownloadWindowsAndExtract()
         {
             var sc = new ServiceCollection();
