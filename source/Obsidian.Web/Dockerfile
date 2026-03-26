@@ -15,13 +15,10 @@ RUN dotnet publish "source/Obsidian.Web/Obsidian.Web.csproj" \
 # === Runtime Stage ===
 FROM nginx:alpine AS final
 
-# Install envsubst (part of gettext)
-RUN apk add --no-cache gettext
-
 # Copy published WASM output
 COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 
-# Create appsettings template for runtime substitution
+# Create appsettings template so entrypoint.sh can restore it on every restart
 RUN cp /usr/share/nginx/html/appsettings.json \
        /usr/share/nginx/html/appsettings.json.template
 

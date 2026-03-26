@@ -24,6 +24,12 @@ step()    { echo -e "\n==> $*"; }
 success() { echo -e "✓ $*"; }
 warn()    { echo -e "⚠ $*"; }
 
+# Validate required arguments
+if [ -z "$CLIENT_ID" ]; then
+    echo "Error: --client-id is required. Usage: ./scripts/deploy-local.sh --client-id <your-azure-ad-client-id>"
+    exit 1
+fi
+
 # Preflight checks
 step "Preflight checks"
 for tool in kubectl helm docker; do
