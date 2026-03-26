@@ -234,3 +234,36 @@ Changed authentication configuration to target personal Microsoft accounts only 
 - This setting must match the `consumers` tenant configuration
 
 **Result:** Build 0 errors. All 113 tests pass.
+
+### 2026-05-28: Wired Obsidian.Api to Aspire ServiceDefaults
+
+Successfully integrated `Obsidian.Api` with Aspire observability and health check infrastructure created by Morpheus.
+
+**Changes Made:**
+- `source/Obsidian.Api/Obsidian.Api.csproj` — added `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.5` package and `Obsidian.ServiceDefaults` project reference
+- `source/Obsidian.Api/Program.cs` — added `builder.AddServiceDefaults()` at top of service registration; added health checks (`self` + `AddDbContextCheck<ObsidianDbContext>`); added `app.MapDefaultEndpoints()` in middleware pipeline after CORS, before controllers
+- `source/Obsidian.Api/appsettings.json` — already had `OTEL_SERVICE_NAME: "obsidian-api"` from previous work
+
+**What AddServiceDefaults Provides:**
+- OpenTelemetry traces, metrics, and logs for distributed observability
+- Service discovery support for Aspire orchestration
+- Resilience handlers for fault tolerance
+- Health check infrastructure
+
+**What MapDefaultEndpoints Provides:**
+- `GET /health` — health check endpoint for EF Core DB connectivity + self check
+- `GET /alive` — liveness probe
+
+**Technical Notes:**
+- Waited 120 seconds for Morpheus to create ServiceDefaults project before proceeding
+- Initial build failed with 3 compile errors in ServiceDefaults (missing extension methods)
+- Morpheus fixed the errors; subsequent build succeeded with 0 errors
+- Health checks use `HealthCheckResult.Healthy()` for self-check and EF Core's built-in DB context check for database connectivity
+- All 113 existing tests still pass — no breaking changes
+
+**Coordination:**
+- Parallel work with Morpheus (ServiceDefaults project)
+- Code changes committed and pushed while ServiceDefaults had compile errors
+- Build succeeded after Morpheus's fixes landed
+
+**Result:** Build 0 errors. All 113 tests pass. Committed as `feat(api): wire Obsidian.Api to Aspire ServiceDefaults`.
