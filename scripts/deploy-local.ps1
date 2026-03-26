@@ -31,6 +31,11 @@ function Write-Step { param([string]$Message) Write-Host "`n==> $Message" -Foreg
 function Write-Success { param([string]$Message) Write-Host "✓ $Message" -ForegroundColor Green }
 function Write-Warn { param([string]$Message) Write-Host "⚠ $Message" -ForegroundColor Yellow }
 
+# Validate required parameters
+if (-not $ClientId) {
+    throw "ClientId is required. Use -ClientId <your-azure-ad-client-id>"
+}
+
 # Preflight checks
 Write-Step "Preflight checks"
 foreach ($tool in @("kubectl", "helm", "docker")) {

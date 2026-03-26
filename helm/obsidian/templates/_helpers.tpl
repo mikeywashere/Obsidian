@@ -1,18 +1,4 @@
 {{/*
-Expand the name of the chart.
-*/}}
-{{- define "obsidian.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create a default fully qualified app name.
-*/}}
-{{- define "obsidian.fullname" -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Common labels
 */}}
 {{- define "obsidian.labels" -}}

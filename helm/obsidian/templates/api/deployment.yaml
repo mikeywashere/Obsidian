@@ -28,8 +28,10 @@ spec:
             - secretRef:
                 name: obsidian-api-secrets
           volumeMounts:
+            {{- if eq .Values.database.type "sqlite" }}
             - name: db-storage
               mountPath: /data
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /alive
@@ -44,7 +46,9 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- if eq .Values.database.type "sqlite" }}
       volumes:
         - name: db-storage
           persistentVolumeClaim:
             claimName: obsidian-db-pvc
+      {{- end }}

@@ -14,7 +14,7 @@ api:
     AzureAd__TenantId: "consumers"
     AzureAd__Audience: ""
     AzureAd__ClientId: ""
-    CORS__AllowedOrigins: "http://obsidian.local"
+    CORS__AllowedOrigins__0: "http://obsidian.local"
     OTEL_SERVICE_NAME: obsidian-api
   resources:
     requests:
