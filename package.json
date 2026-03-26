@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/mikeywashere/Obsidian/issues"
   },
-  "homepage": "https://github.com/mikeywashere/Obsidian#readme"
+  "homepage": "https://github.com/mikeywashere/Obsidian#readme",
+  "dependencies": {
+    "@github/copilot-sdk": "^0.2.0"
+  }
 }
