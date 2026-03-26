@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Obsidian.Api.Services;
 using Obsidian.Models;
-using Obsidian.Models.Authorization;
 
 namespace Obsidian.Api.Controllers;
 
@@ -18,7 +16,6 @@ public class ServersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = Policies.RequireUser)]
     public async Task<ActionResult<IEnumerable<ServerInfo>>> GetAll()
     {
         var servers = await _serverManager.GetAllAsync();
@@ -26,7 +23,6 @@ public class ServersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Policy = Policies.RequireUser)]
     public async Task<ActionResult<ServerInfo>> Get(string id)
     {
         var server = await _serverManager.GetAsync(id);
@@ -38,7 +34,6 @@ public class ServersController : ControllerBase
     }
 
     [HttpGet("{id}/logs")]
-    [Authorize(Policy = Policies.RequireUser)]
     public async Task<ActionResult<IEnumerable<ServerLog>>> GetLogs(string id, [FromQuery] int maxLines = 100)
     {
         var logs = await _serverManager.GetLogsAsync(id, maxLines);
@@ -46,7 +41,6 @@ public class ServersController : ControllerBase
     }
 
     [HttpPost("{id}/start")]
-    [Authorize(Policy = Policies.RequireAdmin)]
     public async Task<IActionResult> Start(string id)
     {
         try
@@ -61,7 +55,6 @@ public class ServersController : ControllerBase
     }
 
     [HttpPost("{id}/stop")]
-    [Authorize(Policy = Policies.RequireAdmin)]
     public async Task<IActionResult> Stop(string id)
     {
         try
