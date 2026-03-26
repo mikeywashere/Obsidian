@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Authentication.WebAssembly.Msal;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Obsidian.Web;
 using Obsidian.Web.Authorization;
 using Obsidian.Web.Services;
@@ -10,17 +9,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Configure API HttpClient base URL
-// When running in Aspire, the AppHost injects service discovery URLs via environment variables
-// Falls back to ApiBaseUrl in appsettings.json for standalone development
-var apiBaseUrl = builder.Configuration["services:obsidian-api:https:0"]
-    ?? builder.Configuration["services:obsidian-api:http:0"]
-    ?? builder.Configuration["ApiBaseUrl"]
-    ?? "https://localhost:5001/";
-
-// Ensure trailing slash for proper URL resolution
-if (!apiBaseUrl.EndsWith('/'))
-    apiBaseUrl += "/";
+// Configure API HttpClient for backend services
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
 
 // Configure Microsoft Authentication
 // Note: To enable authentication, configure the AzureAd section in wwwroot/appsettings.json
@@ -47,25 +38,9 @@ builder.Services.AddAuthorizationCore(options =>
         policy.RequireRole(Roles.User, Roles.Admin, Roles.SystemAdmin));
 });
 
-// Register MSAL-authorized HTTP services — tokens are attached via BaseAddressAuthorizationMessageHandler.
-// NOTE: BaseAddressAuthorizationMessageHandler attaches tokens when the request URL starts with the
-// app's base address. If the API is at a different origin, configure AuthorizationMessageHandler instead.
-builder.Services.AddHttpClient<IServerService, HttpServerService>(client =>
-    client.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
-
-builder.Services.AddHttpClient<IServerPropertiesService, HttpServerPropertiesService>(client =>
-    client.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
-
-builder.Services.AddHttpClient<IServerPlayerService, HttpServerPlayerService>(client =>
-    client.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
-
-builder.Services.AddHttpClient<HttpAdminService>(client =>
-    client.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
-builder.Services.AddScoped<IAdminService, HttpAdminService>();
+// Register services
+builder.Services.AddScoped<IServerService, HttpServerService>();
+builder.Services.AddScoped<IServerPropertiesService, HttpServerPropertiesService>();
+builder.Services.AddScoped<IServerPlayerService, HttpServerPlayerService>();
 
 await builder.Build().RunAsync();
-

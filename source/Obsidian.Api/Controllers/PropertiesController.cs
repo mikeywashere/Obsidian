@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Obsidian.Api.Services;
-using Obsidian.Models.Authorization;
 
 namespace Obsidian.Api.Controllers;
 
@@ -17,7 +15,6 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = Policies.RequireUser)]
     public async Task<ActionResult<ServerProperties>> Get(string serverId)
     {
         var server = await _serverManager.GetAsync(serverId);
@@ -44,7 +41,6 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = Policies.RequireAdmin)]
     public async Task<IActionResult> Put(string serverId, [FromBody] ServerProperties properties)
     {
         var server = await _serverManager.GetAsync(serverId);

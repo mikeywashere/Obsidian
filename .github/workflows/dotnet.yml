@@ -41,20 +41,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nuget-
     
-    - name: Cache .NET workloads
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.dotnet/workloads
-          ~/.dotnet/packs
-        key: ${{ runner.os }}-dotnet-workloads-aspire-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-dotnet-workloads-aspire-
-          ${{ runner.os }}-dotnet-workloads-
-    
-    - name: Install .NET Aspire workload
-      run: dotnet workload install aspire
-    
     - name: Restore dependencies
       run: dotnet restore
     

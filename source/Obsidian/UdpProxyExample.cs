@@ -35,27 +35,6 @@ public static class UdpProxyExample
             Console.WriteLine($"[SERVER -> PROXY] Received {args.Data.Length} bytes from server");
         };
 
-        // Subscribe to parsed RakNet/Minecraft packets for protocol-aware inspection
-        proxy.PacketParsed += (sender, args) =>
-        {
-            var pkt = args.Packet;
-            var dir = pkt.Direction == PacketDirection.ClientToServer ? "C→S" : "S→C";
-            Console.WriteLine($"[PARSED] [{dir}] {pkt.PacketType} ({pkt.RawData.Length} bytes)");
-
-            if (pkt.PacketType == RakNetPacketType.UnconnectedPong && pkt.ServerMotd != null)
-            {
-                Console.WriteLine($"  MOTD     : {pkt.ServerMotd}");
-                Console.WriteLine($"  Players  : {pkt.PlayerCount}/{pkt.MaxPlayers}");
-                Console.WriteLine($"  World    : {pkt.WorldName}");
-                Console.WriteLine($"  GameMode : {pkt.GameMode}");
-            }
-
-            if (pkt.PacketType == RakNetPacketType.DataPacket && pkt.SequenceNumber.HasValue)
-            {
-                Console.WriteLine($"  Seq#     : {pkt.SequenceNumber}");
-            }
-        };
-
         // Start the proxy (this will run until cancelled)
         var cts = new CancellationTokenSource();
         

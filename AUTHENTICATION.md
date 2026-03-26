@@ -85,25 +85,6 @@ Three authorization policies are defined in the application:
 
 ## Azure AD Configuration
 
-### Prerequisites: Configure for Personal Microsoft Accounts
-
-Before setting up app roles, configure your app registration for personal Microsoft accounts:
-
-1. Navigate to [Azure Portal](https://portal.azure.com/)
-2. Go to **Azure Active Directory** > **App registrations**
-3. Select your application
-4. Navigate to **Authentication** > **Supported account types**
-5. Select **"Personal Microsoft accounts only"**
-   - This limits sign-in to outlook.com, hotmail.com, and live.com accounts
-   - Corporate/organizational Azure AD accounts will be blocked
-6. Save the changes
-
-**Important Notes for Personal Microsoft Accounts:**
-- The authority endpoint is `https://login.microsoftonline.com/consumers`
-- Personal MSA tokens use a different issuer (`https://login.live.com` or `https://sts.windows.net/9188040d-6c67-4c5b-b112-36a304b66dad/`)
-- The `sub` claim is the stable identifier for personal accounts
-- The `oid` claim may also be present but behaves differently than organizational accounts
-
 ### Step 1: Create App Roles in Azure AD
 
 1. Navigate to [Azure Portal](https://portal.azure.com/)
@@ -150,14 +131,12 @@ Update `wwwroot/appsettings.json` with your Azure AD configuration:
 ```json
 {
   "AzureAd": {
-    "Authority": "https://login.microsoftonline.com/consumers",
+    "Authority": "https://login.microsoftonline.com/common",
     "ClientId": "YOUR_CLIENT_ID_HERE",
     "ValidateAuthority": true
   }
 }
 ```
-
-**Note:** The `consumers` tenant restricts authentication to personal Microsoft accounts (outlook.com, hotmail.com, live.com). Use `common` to allow both personal and organizational accounts, or `organizations` for organizational accounts only.
 
 ## Testing
 

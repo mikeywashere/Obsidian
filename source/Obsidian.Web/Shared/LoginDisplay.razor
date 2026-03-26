@@ -6,20 +6,22 @@
 
 <AuthorizeView>
     <Authorized>
-        <span class="me-2">Hello, @context.User.Identity?.Name!</span>
-        @if (context.User.IsInRole(Roles.SystemAdmin))
-        {
-            <span class="badge bg-danger me-2">SystemAdmin</span>
-        }
-        else if (context.User.IsInRole(Roles.Admin))
-        {
-            <span class="badge bg-primary me-2">Admin</span>
-        }
-        else if (context.User.IsInRole(Roles.User))
-        {
-            <span class="badge bg-secondary me-2">User</span>
-        }
-        <a href="authentication/logout" class="btn btn-sm btn-outline-secondary">Log out</a>
+        <span class="user-info">
+            Hello, @context.User.Identity?.Name!
+            @if (context.User.IsInRole(Roles.SystemAdmin))
+            {
+                <span class="role-badge system-admin">System Admin</span>
+            }
+            else if (context.User.IsInRole(Roles.Admin))
+            {
+                <span class="role-badge admin">Admin</span>
+            }
+            else if (context.User.IsInRole(Roles.User))
+            {
+                <span class="role-badge user">User</span>
+            }
+        </span>
+        <a href="authentication/logout" class="logout-link">Log out</a>
     </Authorized>
     <NotAuthorized>
         <a href="authentication/login" class="login-link">Log in</a>
