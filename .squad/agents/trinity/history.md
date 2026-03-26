@@ -122,3 +122,47 @@ Frontend HTTP services integrated with Neo's backend API. System ready for end-t
 - Obsidian.Web project builds successfully with 0 errors, 0 warnings
 - All SignalR and properties editor features compile cleanly
 
+### 2026-12-29: Aspire Service Discovery Integration for Blazor WASM
+
+**Context:**
+- Blazor WASM runs in the browser and cannot use runtime service discovery like server-side apps
+- Solution: Use Aspire's service discovery via environment variable injection from AppHost at build time
+- ServiceDefaults project didn't exist yet at time of implementation (Morpheus creating it)
+
+**Changes Made:**
+
+**Program.cs API URL Resolution:**
+- Updated API base URL resolution to check Aspire service discovery env vars first:
+  1. `services:obsidian-api:https:0` (Aspire HTTPS endpoint)
+  2. `services:obsidian-api:http:0` (Aspire HTTP endpoint)
+  3. `ApiBaseUrl` from appsettings.json (standalone fallback)
+  4. Final fallback: `https://localhost:5001/`
+- Added trailing slash normalization for proper URL resolution
+
+**Configuration Structure:**
+- Updated `wwwroot/appsettings.json` to include service discovery pattern:
+  ```json
+  "services": {
+    "obsidian-api": {
+      "https": ["https://localhost:5001"],
+      "http": ["http://localhost:5000"]
+    }
+  }
+  ```
+- Created `wwwroot/appsettings.Development.json` for local override
+
+**WASM Limitations Confirmed:**
+- ServiceDefaults reference NOT added (project doesn't exist yet; can be added later)
+- `AddServiceDiscovery()` is NOT available in pure WASM context (browser-only runtime)
+- ServiceDefaults would only be useful if we add a server-side host component later
+
+**Build Status:**
+- Obsidian.Web builds successfully in isolation (0 errors, 0 warnings)
+- Full solution build failed due to Obsidian.Api missing ServiceDefaults reference (Neo's concern, not mine)
+
+**How It Works:**
+- When running in Aspire AppHost, the host injects service URLs via environment variables
+- WASM app reads from `IConfiguration` which merges appsettings.json + environment vars
+- Standalone development uses appsettings.json values directly
+- All HttpClient registrations use the resolved `apiBaseUrl` variable
+
