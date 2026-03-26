@@ -71,8 +71,7 @@ namespace Obsidian
             using var playwright = await Playwright.CreateAsync();
             await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
             {
-                // Headless = true // Run browser in headless mode (no GUI)
-                Headless = false, // Run browser in gui mode
+                Headless = true,
                 Timeout = 60000 // Set a timeout for browser launch
             });
 
