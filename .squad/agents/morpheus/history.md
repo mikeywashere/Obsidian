@@ -102,3 +102,6 @@
 - `ServerInfo.Status` enum: Stopped, Starting, Running, Stopping, Error
 - `ServerLog.Level` enum: Debug, Info, Warning, Error
 - Authorization uses Azure AD MSAL with roles: SystemAdmin, Admin, User
+- Aspire AppHost orchestrates backend services only; Blazor WASM configured separately via env vars
+- Personal Microsoft accounts (consumers tenant) require ValidateIssuer = false for JWT token validation
+- ServiceDefaults project provides OpenTelemetry and health check infrastructure for all backend services

@@ -212,28 +212,7 @@ Added protocol-aware parsing layer to the existing `UdpProxy`. Parses the RakNet
 
 **Result:** Build 0 errors/warnings (6 pre-existing NU warnings). All 72 tests pass.
 
-### 2026-05-28: Switched Microsoft Auth from Corporate to Personal Accounts Only
 
-Changed authentication configuration to target personal Microsoft accounts only (consumers) instead of common (any account).
-
-**Changes Made:**
-- `source/Obsidian.Api/appsettings.json` — changed `TenantId` from `"common"` to `"consumers"`
-- `source/Obsidian.Web/wwwroot/appsettings.json` — changed `Authority` from `https://login.microsoftonline.com/common` to `https://login.microsoftonline.com/consumers`
-- `source/Obsidian.Api/Program.cs` — commented out `AddServiceDefaults()` and `MapDefaultEndpoints()` (ServiceDefaults project not available); confirmed `ValidateIssuer = false` remains in JWT config
-- `AUTHENTICATION.md` — added Azure portal configuration section for personal accounts
-
-**Technical Context:**
-- `consumers` tenant restricts authentication to outlook.com, hotmail.com, live.com (personal Microsoft accounts)
-- Blocks corporate/organizational Azure AD / Entra ID accounts
-- Personal MSA tokens use different issuers (`https://login.live.com` or `https://sts.windows.net/9188040d-6c67-4c5b-b112-36a304b66dad/`)
-- `ValidateIssuer = false` is critical — issuer doesn't match the authority for personal accounts
-- `sub` claim is the stable identifier for personal accounts; `oid` may also be present
-
-**Azure Portal Configuration:**
-- App registrations → Authentication → Supported account types → "Personal Microsoft accounts only"
-- This setting must match the `consumers` tenant configuration
-
-**Result:** Build 0 errors. All 113 tests pass.
 
 ### 2026-05-28: Wired Obsidian.Api to Aspire ServiceDefaults
 
@@ -267,3 +246,52 @@ Successfully integrated `Obsidian.Api` with Aspire observability and health chec
 - Build succeeded after Morpheus's fixes landed
 
 **Result:** Build 0 errors. All 113 tests pass. Committed as `feat(api): wire Obsidian.Api to Aspire ServiceDefaults`.
+
+### 2026-03-26: Two-Part Backend Update — Auth (Consumers Tenant) + Aspire Integration
+
+**Part A: Switched Microsoft Auth from Corporate to Personal Accounts Only (Commit 7ff437d)**
+
+Changed authentication configuration to target personal Microsoft accounts only (consumers) instead of common (any account).
+
+**Changes Made:**
+- `source/Obsidian.Api/appsettings.json` — changed `TenantId` from `"common"` to `"consumers"`
+- `source/Obsidian.Web/wwwroot/appsettings.json` — changed `Authority` from `https://login.microsoftonline.com/common` to `https://login.microsoftonline.com/consumers`
+- `AUTHENTICATION.md` — added Azure portal configuration section for personal accounts
+
+**Technical Context:**
+- `consumers` tenant restricts authentication to outlook.com, hotmail.com, live.com (personal Microsoft accounts)
+- Blocks corporate/organizational Azure AD / Entra ID accounts
+- Personal MSA tokens use different issuers (`https://login.live.com` or `https://sts.windows.net/9188040d-6c67-4c5b-b112-36a304b66dad/`)
+- `ValidateIssuer = false` is critical — issuer doesn't match the authority for personal accounts
+- `sub` claim is the stable identifier for personal accounts; `oid` may also be present
+
+**User Directive:** Authentication must target personal Microsoft accounts only (outlook.com, hotmail.com, live.com)
+
+---
+
+**Part B: Wired Obsidian.Api to Aspire ServiceDefaults (Commit e4275be)**
+
+Successfully integrated `Obsidian.Api` with Aspire observability and health check infrastructure created by Morpheus.
+
+**Changes Made:**
+- `source/Obsidian.Api/Obsidian.Api.csproj` — added `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.5` package and `Obsidian.ServiceDefaults` project reference
+- `source/Obsidian.Api/Program.cs` — added `builder.AddServiceDefaults()` at top of service registration; added health checks (`self` + `AddDbContextCheck<ObsidianDbContext>`); added `app.MapDefaultEndpoints()` in middleware pipeline after CORS, before controllers
+
+**What AddServiceDefaults Provides:**
+- OpenTelemetry traces, metrics, and logs for distributed observability
+- Service discovery support for Aspire orchestration
+- Resilience handlers for fault tolerance
+- Health check infrastructure
+
+**What MapDefaultEndpoints Provides:**
+- `GET /health` — health check endpoint for EF Core DB connectivity + self check
+- `GET /alive` — liveness probe
+
+**Technical Coordination:**
+- Waited for Morpheus to create ServiceDefaults project before proceeding
+- Initial build had compile errors in ServiceDefaults (missing extension methods)
+- Morpheus fixed the errors; subsequent build succeeded with 0 errors
+- Health checks use `HealthCheckResult.Healthy()` for self-check and EF Core's built-in DB context check for database connectivity
+- All 113 existing tests still pass — no breaking changes
+
+**Result:** Build 0 errors. All 113 tests pass. Both commits successfully integrated into main workflow.
