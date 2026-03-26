@@ -1,0 +1,236 @@
+@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using Obsidian.Web.Authorization
+@using Obsidian.Models
+@using Obsidian.Web.Services
+@attribute [Authorize(Policy = Policies.RequireSystemAdmin)]
+@inject IAdminService AdminService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Admin — User Management</PageTitle>
+
+<div class="container-fluid py-3">
+    <h1>User Management</h1>
+    <p class="text-muted">Grant or revoke elevated roles for Azure AD users.</p>
+
+    @if (_error is not null)
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @if (_success is not null)
+    {
+        <div class="alert alert-success alert-dismissible" role="alert">
+            @_success
+            <button type="button" class="btn-close" @onclick="() => _success = null"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Grant Admin Override</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="objectId">Azure AD Object ID</label>
+                    <input id="objectId" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                           @bind="_form.ObjectId" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="displayName">Display Name</label>
+                    <input id="displayName" class="form-control" placeholder="Jane Doe"
+                           @bind="_form.DisplayName" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="role">Role</label>
+                    <select id="role" class="form-select" @bind="_form.Role">
+                        <option value="@Roles.Admin">Admin</option>
+                        <option value="@Roles.SystemAdmin">SystemAdmin</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" @onclick="GrantAdmin" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Grant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Current Admin Overrides</h5>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="LoadUsers" disabled="@_loading">
+                ↻ Refresh
+            </button>
+        </div>
+        <div class="card-body p-0">
+            @if (_loading)
+            {
+                <div class="p-3 text-muted">Loading...</div>
+            }
+            else if (!_users.Any())
+            {
+                <div class="p-3 text-muted">No admin overrides configured.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Display Name</th>
+                                <th>Object ID</th>
+                                <th>Role</th>
+                                <th>Granted At</th>
+                                <th>Granted By</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in _users)
+                            {
+                                <tr>
+                                    <td>@user.DisplayName</td>
+                                    <td><code class="small">@user.ObjectId</code></td>
+                                    <td>
+                                        @if (user.Role == Roles.SystemAdmin)
+                                        {
+                                            <span class="badge bg-danger">SystemAdmin</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary">Admin</span>
+                                        }
+                                    </td>
+                                    <td>@user.GrantedAt.ToString("g") UTC</td>
+                                    <td><code class="small">@user.GrantedBy</code></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => RevokeAdmin(user.ObjectId)"
+                                                disabled="@_revoking.Contains(user.ObjectId)">
+                                            @if (_revoking.Contains(user.ObjectId))
+                                            {
+                                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                            }
+                                            else
+                                            {
+                                                <span>Remove</span>
+                                            }
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<UserAdminOverride> _users = [];
+    private readonly UserAdminOverride _form = new() { Role = Roles.Admin };
+    private readonly HashSet<string> _revoking = [];
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+    private string? _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _users = (await AdminService.GetAdminUsersAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load users: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task GrantAdmin()
+    {
+        if (string.IsNullOrWhiteSpace(_form.ObjectId) || string.IsNullOrWhiteSpace(_form.DisplayName))
+        {
+            _error = "Object ID and Display Name are required.";
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        _success = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var grantedBy = authState.User.FindFirst("oid")?.Value
+                            ?? authState.User.FindFirst("sub")?.Value
+                            ?? "unknown";
+
+            var override_ = new UserAdminOverride
+            {
+                ObjectId = _form.ObjectId.Trim(),
+                DisplayName = _form.DisplayName.Trim(),
+                Role = _form.Role,
+                GrantedAt = DateTime.UtcNow,
+                GrantedBy = grantedBy
+            };
+
+            await AdminService.GrantAdminAsync(override_);
+            _success = $"Granted {override_.Role} to {override_.DisplayName}.";
+            _form.ObjectId = string.Empty;
+            _form.DisplayName = string.Empty;
+            _form.Role = Roles.Admin;
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to grant admin: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task RevokeAdmin(string objectId)
+    {
+        _revoking.Add(objectId);
+        _error = null;
+        _success = null;
+        try
+        {
+            await AdminService.RevokeAdminAsync(objectId);
+            _success = "Admin override removed.";
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to revoke admin: {ex.Message}";
+        }
+        finally
+        {
+            _revoking.Remove(objectId);
+        }
+    }
+}
