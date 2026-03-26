@@ -48,6 +48,37 @@ Trinity's frontend HTTP client wiring complete and integrated. System ready for 
 
 <!-- Append learnings below -->
 
+### 2026-05-28: Added Microsoft Identity JWT Bearer Auth and Admin Role Management
+
+Implemented full authentication and authorization stack for `Obsidian.Api`:
+
+**New Files:**
+- `source/Obsidian.Models/Authorization/Roles.cs` — shared role constants (`User`, `Admin`, `SystemAdmin`) in `Obsidian.Models.Authorization`
+- `source/Obsidian.Models/Authorization/Policies.cs` — shared policy name constants in `Obsidian.Models.Authorization`
+- `source/Obsidian.Models/UserAdminOverride.cs` — model for local DB role overrides (ObjectId PK = Azure AD oid)
+- `source/Obsidian.Api/appsettings.json` — AzureAd config (Instance, TenantId, ClientId, Audience) + connection string
+- `source/Obsidian.Api/Controllers/AdminController.cs` — `GET/POST /api/admin/users`, `DELETE /api/admin/users/{objectId}`; all `RequireSystemAdmin`
+- `source/Obsidian.Api/Services/AdminOverrideClaimsTransformation.cs` — `IClaimsTransformation` that adds role claims from `UserAdminOverrides` table
+- `source/Obsidian.DataAccess/ObsidianDbContextFactory.cs` — design-time factory for EF tools
+- EF migration `AddUserAdminOverrides` — adds `UserAdminOverrides` table (HasKey ObjectId)
+
+**Modified Files:**
+- `Obsidian.Api.csproj` — added `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.5`, `Microsoft.EntityFrameworkCore.Design 10.0.5`, `Obsidian.DataAccess` project reference
+- `Program.cs` — added JWT bearer auth, `AdminOverrideClaimsTransformation`, authorization policies, `ObsidianDbContext` registration, `UseAuthentication()` before `UseAuthorization()`
+- `ServersController.cs` — `[Authorize]` on all actions (User for GETs, Admin for start/stop)
+- `PropertiesController.cs` — `[Authorize]` (User for GET, Admin for PUT)
+- `PlayersController.cs` — `[Authorize(Policy = RequireUser)]`
+- `ObsidianDbContext.cs` — added `UserAdminOverrides` DbSet + fluent config
+
+**Technical Decisions:**
+- Used `Microsoft.AspNetCore.Authentication.JwtBearer` directly (not `Microsoft.Identity.Web`) — lighter dependency, sufficient for API-only token validation
+- `ValidateIssuer = false` for multi-tenant support (single Azure AD tenant not assumed)
+- `AdminOverrideClaimsTransformation` reads `oid` claim (Azure AD v2 object ID), falls back to `sub` — same as what the frontend reads
+- `GrantedBy` is set server-side from token claims (not trusting client-provided value)
+- Roles constants moved to `Obsidian.Models.Authorization` namespace so API can reference them without depending on `Obsidian.Web`
+
+**Result:** Build 0 errors. All 113 tests pass (101 existing + 12 new from Tank's pre-written tests).
+
 ### 2026-03-25: Implemented SignalR Real-Time Log Streaming (P1)
 
 Added event-driven architecture for broadcasting server logs to connected clients via SignalR:
