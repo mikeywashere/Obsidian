@@ -198,6 +198,24 @@ public class AuthorizationTests
         result.Succeeded.ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task SystemAdminPolicy_ShouldDenyUser()
+    {
+        // Arrange
+        var options = new AuthorizationOptions();
+        options.AddPolicy(Policies.RequireSystemAdmin, policy =>
+            policy.RequireRole(Roles.SystemAdmin));
+
+        var user = CreateUserWithRole(Roles.User);
+        var authorizationService = CreateAuthorizationService(options);
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(user, Policies.RequireSystemAdmin);
+
+        // Assert
+        result.Succeeded.ShouldBeFalse();
+    }
+
     private static ClaimsPrincipal CreateUserWithRole(string role)
     {
         var claims = new List<Claim>
