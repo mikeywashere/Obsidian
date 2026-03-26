@@ -131,3 +131,48 @@
 - `PlayerTracker` uses `ConcurrentDictionary<string, ConcurrentDictionary<string, PlayerInfo>>` keyed by serverId then xuid
 - `GetPlayers` returns `.ToList()` copy — confirmed by snapshot isolation test
 - Disconnect with no prior connect silently no-ops (PlayerLeft not fired)
+
+### 2026-03-25 - RakNetParser Unit Tests
+
+**Task:** Write comprehensive unit tests for the RakNetParser static class added by Neo.
+
+**What I built:**
+- `RakNetParserTests.cs` — 28 tests covering all parsing scenarios
+  - Packet type identification for all 12 known types (Ping, Pong, OCR1/2, OCReply1/2, NewIncomingConnection, Disconnect, Ack, Nack, GamePacket, Unknown)
+  - DataPacket range (0x80–0x8f all map to DataPacket): 3 tests covering boundary + midpoint
+  - DataPacket sequence number extraction: 2 tests (normal and large LE sequence numbers)
+  - UnconnectedPong MOTD parsing: 5 tests (PlayerCount, MaxPlayers, WorldName, GameMode, ServerMotd)
+  - Direction preservation: 2 tests (ClientToServer, ServerToClient)
+  - Raw data preservation: 1 test
+  - Defensive parsing (never throws): 4 tests (empty array, truncated pong, truncated DataPacket, malformed MOTD)
+
+**Test results:**
+- Total: 101 tests (prior 72 + 28 new + 1 existing rounding difference)
+- All tests PASSED ✅
+- Duration: ~25s
+
+**Testing approach:**
+- Used private `BuildPongPacket(string motd)` helper to construct valid 0x1c packets with proper layout: [0]=0x1c [1-8]=sendTime [9-16]=serverGuid [17-32]=magic [33-34]=strLen BE [35+]=MOTD UTF-8
+- Used `BinaryPrimitives.WriteInt64BigEndian` and `WriteUInt16BigEndian` for correct byte layout
+- Verified defensive parsing by truncating packets mid-stream — parser must never throw
+- Added null assertion before `ShouldContain` to satisfy nullable analysis (CS8604 warning)
+
+**Key insights:**
+- `RakNetParser.Parse()` catches all exceptions internally — outer `Parse` wraps `ParseInternal` in try/catch
+- DataPacket sequence number requires at least 4 bytes; with only 1–3 bytes, `SequenceNumber` is null
+- Pong MOTD parsing requires `data.Length >= 35` AND `data.Length >= 35 + motdLength`; truncation yields null fields
+- `PacketDirection` enum lives in `UdpProxy.cs` (not `IUdpProxy.cs`) in the `Obsidian` namespace
+
+### 2026-03-26 - RakNetParser Tests Session Complete
+
+**Status:** ✅ COMPLETED  
+**Duration:** Async background work + scribe finalization
+
+**Session Summary:**
+Completed comprehensive unit test expansion for RakNetParser. All 101 tests passing (28 new + 73 existing). Tests committed and pushed to `copilot/add-database-access-ef-core` branch.
+
+**Artifacts Created:**
+- `.squad/orchestration-log/2026-03-26T04-43-00Z-tank.md` — Spawn result summary
+- `.squad/log/2026-03-26T04-43-00Z-raknet-tests.md` — Detailed session execution log
+
+**Next Steps:** Awaiting coordinator instructions for subsequent work assignments.
