@@ -48,6 +48,37 @@ Trinity's frontend HTTP client wiring complete and integrated. System ready for 
 
 <!-- Append learnings below -->
 
+### 2026-05-28: Added Microsoft Identity JWT Bearer Auth and Admin Role Management
+
+Implemented full authentication and authorization stack for `Obsidian.Api`:
+
+**New Files:**
+- `source/Obsidian.Models/Authorization/Roles.cs` — shared role constants (`User`, `Admin`, `SystemAdmin`) in `Obsidian.Models.Authorization`
+- `source/Obsidian.Models/Authorization/Policies.cs` — shared policy name constants in `Obsidian.Models.Authorization`
+- `source/Obsidian.Models/UserAdminOverride.cs` — model for local DB role overrides (ObjectId PK = Azure AD oid)
+- `source/Obsidian.Api/appsettings.json` — AzureAd config (Instance, TenantId, ClientId, Audience) + connection string
+- `source/Obsidian.Api/Controllers/AdminController.cs` — `GET/POST /api/admin/users`, `DELETE /api/admin/users/{objectId}`; all `RequireSystemAdmin`
+- `source/Obsidian.Api/Services/AdminOverrideClaimsTransformation.cs` — `IClaimsTransformation` that adds role claims from `UserAdminOverrides` table
+- `source/Obsidian.DataAccess/ObsidianDbContextFactory.cs` — design-time factory for EF tools
+- EF migration `AddUserAdminOverrides` — adds `UserAdminOverrides` table (HasKey ObjectId)
+
+**Modified Files:**
+- `Obsidian.Api.csproj` — added `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.5`, `Microsoft.EntityFrameworkCore.Design 10.0.5`, `Obsidian.DataAccess` project reference
+- `Program.cs` — added JWT bearer auth, `AdminOverrideClaimsTransformation`, authorization policies, `ObsidianDbContext` registration, `UseAuthentication()` before `UseAuthorization()`
+- `ServersController.cs` — `[Authorize]` on all actions (User for GETs, Admin for start/stop)
+- `PropertiesController.cs` — `[Authorize]` (User for GET, Admin for PUT)
+- `PlayersController.cs` — `[Authorize(Policy = RequireUser)]`
+- `ObsidianDbContext.cs` — added `UserAdminOverrides` DbSet + fluent config
+
+**Technical Decisions:**
+- Used `Microsoft.AspNetCore.Authentication.JwtBearer` directly (not `Microsoft.Identity.Web`) — lighter dependency, sufficient for API-only token validation
+- `ValidateIssuer = false` for multi-tenant support (single Azure AD tenant not assumed)
+- `AdminOverrideClaimsTransformation` reads `oid` claim (Azure AD v2 object ID), falls back to `sub` — same as what the frontend reads
+- `GrantedBy` is set server-side from token claims (not trusting client-provided value)
+- Roles constants moved to `Obsidian.Models.Authorization` namespace so API can reference them without depending on `Obsidian.Web`
+
+**Result:** Build 0 errors. All 113 tests pass (101 existing + 12 new from Tank's pre-written tests).
+
 ### 2026-03-25: Implemented SignalR Real-Time Log Streaming (P1)
 
 Added event-driven architecture for broadcasting server logs to connected clients via SignalR:
@@ -143,3 +174,124 @@ Added log-based player tracking using Minecraft Bedrock server stdout event pars
 
 **Result:** Build 0 errors. All 68 tests pass (51 existing + 13 new + 4 PlayersController).
 
+### 2026-05-28: Added RakNet/Minecraft Bedrock Packet Parsing to UdpProxy
+
+Added protocol-aware parsing layer to the existing `UdpProxy`. Parses the RakNet framing layer and pre-login Minecraft game packets; encrypted post-login game packets are identified but not decrypted (AES-256-CFB8, ECDH key exchange — Morpheus constraint).
+
+**New Files:**
+- `source/Obsidian/RakNetPacketType.cs` — enum of all known RakNet packet IDs
+- `source/Obsidian/ParsedPacket.cs` — immutable record carrying parsed fields
+- `source/Obsidian/RakNetParser.cs` — static parser using `BinaryPrimitives`; never throws
+
+**Modified Files:**
+- `IUdpProxy.cs` — added `ParsedPacketEventArgs` and `PacketParsed` event
+- `UdpProxy.cs` — fires `PacketParsed` after both client→server and server→client forwarding (subscriber guard = zero-cost when unused)
+- `UdpProxyExample.cs` — added `PacketParsed` subscriber example printing type, MOTD, players, world, sequence number
+
+**Packet types handled:**
+| ID | Type | Parsed fields |
+|----|------|---------------|
+| 0x01 | UnconnectedPing | type only |
+| 0x1c | UnconnectedPong | MOTD, playerCount, maxPlayers, worldName, gameMode |
+| 0x05 | OpenConnectionRequest1 | type only |
+| 0x06 | OpenConnectionReply1 | type only |
+| 0x07 | OpenConnectionRequest2 | type only |
+| 0x08 | OpenConnectionReply2 | type only |
+| 0x13 | NewIncomingConnection | type only |
+| 0x15 | DisconnectNotification | type only |
+| 0xc0 | Ack | type only |
+| 0xa0 | Nack | type only |
+| 0x80–0x8f | DataPacket | 3-byte LE sequence number |
+| 0xfe | GamePacket | IsEncrypted=false (indeterminate without login state tracking) |
+| other | Unknown | raw bytes |
+
+**Limitations:**
+- `GamePacket.IsEncrypted` is always `false` — determining encryption state requires tracking the login handshake sequence, which is out of scope
+- No encapsulated-packet parsing inside DataPacket frames (reliability layer)
+- Offline message ID magic is not validated (not required for type identification)
+
+**Result:** Build 0 errors/warnings (6 pre-existing NU warnings). All 72 tests pass.
+
+
+
+### 2026-05-28: Wired Obsidian.Api to Aspire ServiceDefaults
+
+Successfully integrated `Obsidian.Api` with Aspire observability and health check infrastructure created by Morpheus.
+
+**Changes Made:**
+- `source/Obsidian.Api/Obsidian.Api.csproj` — added `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.5` package and `Obsidian.ServiceDefaults` project reference
+- `source/Obsidian.Api/Program.cs` — added `builder.AddServiceDefaults()` at top of service registration; added health checks (`self` + `AddDbContextCheck<ObsidianDbContext>`); added `app.MapDefaultEndpoints()` in middleware pipeline after CORS, before controllers
+- `source/Obsidian.Api/appsettings.json` — already had `OTEL_SERVICE_NAME: "obsidian-api"` from previous work
+
+**What AddServiceDefaults Provides:**
+- OpenTelemetry traces, metrics, and logs for distributed observability
+- Service discovery support for Aspire orchestration
+- Resilience handlers for fault tolerance
+- Health check infrastructure
+
+**What MapDefaultEndpoints Provides:**
+- `GET /health` — health check endpoint for EF Core DB connectivity + self check
+- `GET /alive` — liveness probe
+
+**Technical Notes:**
+- Waited 120 seconds for Morpheus to create ServiceDefaults project before proceeding
+- Initial build failed with 3 compile errors in ServiceDefaults (missing extension methods)
+- Morpheus fixed the errors; subsequent build succeeded with 0 errors
+- Health checks use `HealthCheckResult.Healthy()` for self-check and EF Core's built-in DB context check for database connectivity
+- All 113 existing tests still pass — no breaking changes
+
+**Coordination:**
+- Parallel work with Morpheus (ServiceDefaults project)
+- Code changes committed and pushed while ServiceDefaults had compile errors
+- Build succeeded after Morpheus's fixes landed
+
+**Result:** Build 0 errors. All 113 tests pass. Committed as `feat(api): wire Obsidian.Api to Aspire ServiceDefaults`.
+
+### 2026-03-26: Two-Part Backend Update — Auth (Consumers Tenant) + Aspire Integration
+
+**Part A: Switched Microsoft Auth from Corporate to Personal Accounts Only (Commit 7ff437d)**
+
+Changed authentication configuration to target personal Microsoft accounts only (consumers) instead of common (any account).
+
+**Changes Made:**
+- `source/Obsidian.Api/appsettings.json` — changed `TenantId` from `"common"` to `"consumers"`
+- `source/Obsidian.Web/wwwroot/appsettings.json` — changed `Authority` from `https://login.microsoftonline.com/common` to `https://login.microsoftonline.com/consumers`
+- `AUTHENTICATION.md` — added Azure portal configuration section for personal accounts
+
+**Technical Context:**
+- `consumers` tenant restricts authentication to outlook.com, hotmail.com, live.com (personal Microsoft accounts)
+- Blocks corporate/organizational Azure AD / Entra ID accounts
+- Personal MSA tokens use different issuers (`https://login.live.com` or `https://sts.windows.net/9188040d-6c67-4c5b-b112-36a304b66dad/`)
+- `ValidateIssuer = false` is critical — issuer doesn't match the authority for personal accounts
+- `sub` claim is the stable identifier for personal accounts; `oid` may also be present
+
+**User Directive:** Authentication must target personal Microsoft accounts only (outlook.com, hotmail.com, live.com)
+
+---
+
+**Part B: Wired Obsidian.Api to Aspire ServiceDefaults (Commit e4275be)**
+
+Successfully integrated `Obsidian.Api` with Aspire observability and health check infrastructure created by Morpheus.
+
+**Changes Made:**
+- `source/Obsidian.Api/Obsidian.Api.csproj` — added `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.5` package and `Obsidian.ServiceDefaults` project reference
+- `source/Obsidian.Api/Program.cs` — added `builder.AddServiceDefaults()` at top of service registration; added health checks (`self` + `AddDbContextCheck<ObsidianDbContext>`); added `app.MapDefaultEndpoints()` in middleware pipeline after CORS, before controllers
+
+**What AddServiceDefaults Provides:**
+- OpenTelemetry traces, metrics, and logs for distributed observability
+- Service discovery support for Aspire orchestration
+- Resilience handlers for fault tolerance
+- Health check infrastructure
+
+**What MapDefaultEndpoints Provides:**
+- `GET /health` — health check endpoint for EF Core DB connectivity + self check
+- `GET /alive` — liveness probe
+
+**Technical Coordination:**
+- Waited for Morpheus to create ServiceDefaults project before proceeding
+- Initial build had compile errors in ServiceDefaults (missing extension methods)
+- Morpheus fixed the errors; subsequent build succeeded with 0 errors
+- Health checks use `HealthCheckResult.Healthy()` for self-check and EF Core's built-in DB context check for database connectivity
+- All 113 existing tests still pass — no breaking changes
+
+**Result:** Build 0 errors. All 113 tests pass. Both commits successfully integrated into main workflow.

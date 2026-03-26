@@ -131,3 +131,93 @@
 - `PlayerTracker` uses `ConcurrentDictionary<string, ConcurrentDictionary<string, PlayerInfo>>` keyed by serverId then xuid
 - `GetPlayers` returns `.ToList()` copy — confirmed by snapshot isolation test
 - Disconnect with no prior connect silently no-ops (PlayerLeft not fired)
+
+### 2026-03-25 - RakNetParser Unit Tests
+
+**Task:** Write comprehensive unit tests for the RakNetParser static class added by Neo.
+
+**What I built:**
+- `RakNetParserTests.cs` — 28 tests covering all parsing scenarios
+  - Packet type identification for all 12 known types (Ping, Pong, OCR1/2, OCReply1/2, NewIncomingConnection, Disconnect, Ack, Nack, GamePacket, Unknown)
+  - DataPacket range (0x80–0x8f all map to DataPacket): 3 tests covering boundary + midpoint
+  - DataPacket sequence number extraction: 2 tests (normal and large LE sequence numbers)
+  - UnconnectedPong MOTD parsing: 5 tests (PlayerCount, MaxPlayers, WorldName, GameMode, ServerMotd)
+  - Direction preservation: 2 tests (ClientToServer, ServerToClient)
+  - Raw data preservation: 1 test
+  - Defensive parsing (never throws): 4 tests (empty array, truncated pong, truncated DataPacket, malformed MOTD)
+
+**Test results:**
+- Total: 101 tests (prior 72 + 28 new + 1 existing rounding difference)
+- All tests PASSED ✅
+- Duration: ~25s
+
+**Testing approach:**
+- Used private `BuildPongPacket(string motd)` helper to construct valid 0x1c packets with proper layout: [0]=0x1c [1-8]=sendTime [9-16]=serverGuid [17-32]=magic [33-34]=strLen BE [35+]=MOTD UTF-8
+- Used `BinaryPrimitives.WriteInt64BigEndian` and `WriteUInt16BigEndian` for correct byte layout
+- Verified defensive parsing by truncating packets mid-stream — parser must never throw
+- Added null assertion before `ShouldContain` to satisfy nullable analysis (CS8604 warning)
+
+**Key insights:**
+- `RakNetParser.Parse()` catches all exceptions internally — outer `Parse` wraps `ParseInternal` in try/catch
+- DataPacket sequence number requires at least 4 bytes; with only 1–3 bytes, `SequenceNumber` is null
+- Pong MOTD parsing requires `data.Length >= 35` AND `data.Length >= 35 + motdLength`; truncation yields null fields
+- `PacketDirection` enum lives in `UdpProxy.cs` (not `IUdpProxy.cs`) in the `Obsidian` namespace
+
+### 2026-03-26 - RakNetParser Tests Session Complete
+
+**Status:** ✅ COMPLETED  
+**Duration:** Async background work + scribe finalization
+
+**Session Summary:**
+Completed comprehensive unit test expansion for RakNetParser. All 101 tests passing (28 new + 73 existing). Tests committed and pushed to `copilot/add-database-access-ef-core` branch.
+
+**Artifacts Created:**
+- `.squad/orchestration-log/2026-03-26T04-43-00Z-tank.md` — Spawn result summary
+- `.squad/log/2026-03-26T04-43-00Z-raknet-tests.md` — Detailed session execution log
+
+**Next Steps:** Awaiting coordinator instructions for subsequent work assignments.
+
+### 2026-03-26 - Auth & Admin Role Management Tests
+
+**Task:** Write auth tests for API endpoints and admin role management.
+
+**What I built:**
+- `AdminControllerTests.cs` — 7 tests covering Neo's AdminController
+  - `GetAdminUsers_RequiresSystemAdminRole` — reflection check: class-level [Authorize(Policy="RequireSystemAdmin")]
+  - `GetAdminUsers_ReturnsListFromDb` — in-memory SQLite: populates overrides, calls GetUsers(), asserts returned list
+  - `GrantAdmin_RequiresSystemAdminRole` — reflection check: class-level [Authorize] covers all endpoints
+  - `GrantAdmin_AddsOverrideToDb` — calls AddUser() with valid body, verifies override persisted + GrantedBy set
+  - `RevokeAdmin_RequiresSystemAdminRole` — reflection check (same class attr)
+  - `RevokeAdmin_RemovesOverrideFromDb` — seeds override, calls DeleteUser(), verifies null after removal
+  - `RevokeAdmin_Returns404_WhenNotFound` — calls DeleteUser("nonexistent"), asserts NotFoundObjectResult
+
+- `AdminOverrideClaimsTransformationTests.cs` — 4 tests covering Neo's AdminOverrideClaimsTransformation
+  - `TransformAsync_AddsRoleClaim_WhenUserHasAdminOverride` — override with Role="Admin", asserts IsInRole("Admin")
+  - `TransformAsync_AddsSystemAdminClaim_WhenUserHasSystemAdminOverride` — override with Role="SystemAdmin"
+  - `TransformAsync_DoesNotAddClaim_WhenNoOverrideExists` — no DB entry → Assert.Same(principal, result)
+  - `TransformAsync_ReturnsPrincipalUnchanged_WhenNoOidClaim` — no "oid"/"sub" → Assert.Same(principal, result)
+
+- `AuthorizationTests.cs` — +1 test (only missing test from existing suite)
+  - `SystemAdminPolicy_ShouldDenyUser` — verifies SystemAdmin policy rejects User role
+
+**Test results:**
+- Total: 113 tests (101 prior + 12 new)
+- All tests PASSED ✅
+
+**Testing approach:**
+- Used SQLite in-memory with `SqliteConnection("DataSource=:memory:")` + `EnsureCreated()` for controller and transformation tests — consistent with DataAccessTests.cs pattern
+- Used `IDisposable` pattern for connection/context cleanup per test class
+- Used `DefaultHttpContext` + `ControllerContext` to inject User claims into controller (no NSubstitute needed for HttpContext)
+- Authorization attribute tests use `GetCustomAttributes(typeof(AuthorizeAttribute), true)` reflection — verifies class-level [Authorize] covers all endpoints
+- `Assert.Same` to verify principal reference unchanged when no-op path taken
+
+**Key insights:**
+- Neo's AdminController uses ObsidianDbContext directly (no IAdminService interface) — test against DbContext, not a mock
+- IAdminService.cs stub WAS previously committed on this branch (Trinity added it); restored via `git checkout HEAD` after accidentally deleting it
+- Neo already grouped my test files into his feat(api) commit — commit fceae6f
+- Controller method names differ from task spec: `GetUsers`, `AddUser`, `DeleteUser` (not `GetAdminUsers`/`GrantAdmin`/`RevokeAdmin`)
+- `DeleteUser` returns 204 NoContent (not 200 Ok) on success — test uses `NoContentResult`
+- AdminOverrideClaimsTransformation uses short claim name "oid" (not full URL), falls back to "sub"
+- Roles.cs and Policies.cs duplicated in Obsidian.Models.Authorization (for API use) vs Obsidian.Web.Authorization (for Blazor WASM)
+- 5 of the 6 requested AuthorizationTests extensions already existed with "Should" prefix naming convention
+

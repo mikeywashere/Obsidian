@@ -23,6 +23,12 @@ public interface IUdpProxy : IDisposable
     event EventHandler<PacketEventArgs>? ResponseReceived;
 
     /// <summary>
+    /// Event triggered after each packet (both directions) has been parsed by <see cref="RakNetParser"/>.
+    /// Only fires if there are subscribers — zero-cost when unused.
+    /// </summary>
+    event EventHandler<ParsedPacketEventArgs>? PacketParsed;
+
+    /// <summary>
     /// Starts the UDP proxy to begin intercepting and forwarding packets.
     /// </summary>
     /// <param name="cancellationToken">Optional cancellation token to stop the proxy.</param>
@@ -32,4 +38,13 @@ public interface IUdpProxy : IDisposable
     /// Stops the UDP proxy.
     /// </summary>
     void Stop();
+}
+
+/// <summary>
+/// Event arguments carrying a protocol-parsed RakNet/Minecraft packet.
+/// </summary>
+public class ParsedPacketEventArgs : EventArgs
+{
+    public IPEndPoint RemoteEndPoint { get; init; } = null!;
+    public ParsedPacket Packet { get; init; } = null!;
 }
