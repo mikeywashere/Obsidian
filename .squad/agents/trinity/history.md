@@ -6,9 +6,40 @@
 - **Role:** Frontend Dev
 - **Joined:** 2026-03-20T23:20:52.206Z
 
+### 2026-03-26: Aspire Service Discovery Configuration for Blazor WASM
+- **Task:** Configure Obsidian.Web to discover Obsidian.Api service via Aspire environment variables
+- **Changes Made:**
+  - Updated `Program.cs` API URL resolution to check Aspire env vars in priority order:
+    1. `services:obsidian-api:https:0` (Aspire HTTPS endpoint)
+    2. `services:obsidian-api:http:0` (Aspire HTTP endpoint)
+    3. `ApiBaseUrl` from appsettings.json (standalone fallback)
+    4. `https://localhost:5001/` (hardcoded fallback)
+  - Added trailing slash normalization for proper URL resolution
+  - Updated `wwwroot/appsettings.json` to include service discovery pattern structure
+  - Created `wwwroot/appsettings.Development.json` for local environment overrides
+
+**Key Finding — WASM Limitation:**
+- `AddServiceDiscovery()` is NOT available in Blazor WASM context (browser-only runtime)
+- WASM cannot use server-side service discovery APIs at runtime
+- Solution: Environment variables injected from AppHost at startup time (not runtime discovery)
+- ServiceDefaults reference deferred (can be added later if server-side host component added)
+
+**How It Works:**
+1. AppHost injects service URLs via environment variables (services:obsidian-api:*)
+2. WASM app starts, reads from `IConfiguration` (merges appsettings + env vars)
+3. HttpClient registered with discovered `apiBaseUrl`
+4. All API calls use the discovered service endpoint
+
+- **Commit:** 88d5afe on branch `copilot/add-database-access-ef-core`
+- **Result:** ✅ Obsidian.Web builds successfully with 0 errors; service discovery configured for Aspire environment
+
 ## Learnings
 
 <!-- Append learnings below -->
+- Blazor WASM service discovery must use environment variables (no runtime service discovery available)
+- Environment variables from AppHost are readable via `IConfiguration` in WASM
+- ServiceDefaults library provides server-side extensions only — not applicable to pure WASM
+- Fallback chain design ensures standalone development works without Aspire AppHost running
 
 ### 2026-03-25: Frontend HTTP Client Layer Complete
 
