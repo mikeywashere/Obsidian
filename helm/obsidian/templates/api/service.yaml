@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "obsidian.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: obsidian-api
+  ports:
+    - port: {{ .Values.api.port }}
+      targetPort: {{ .Values.api.port }}
+      protocol: TCP
+      name: http

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "obsidian.labels" . | nindent 4 }}
+    app: obsidian-api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app: obsidian-api
+  template:
+    metadata:
+      labels:
+        app: obsidian-api
+    spec:
+      containers:
+        - name: obsidian-api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.api.port }}
+          envFrom:
+            - configMapRef:
+                name: obsidian-api-config
+            - secretRef:
+                name: obsidian-api-secrets
+          volumeMounts:
+            {{- if eq .Values.database.type "sqlite" }}
+            - name: db-storage
+              mountPath: /data
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: {{ .Values.api.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.api.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- if eq .Values.database.type "sqlite" }}
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: obsidian-db-pvc
+      {{- end }}

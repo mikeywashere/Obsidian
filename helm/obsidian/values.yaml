@@ -1,0 +1,54 @@
+namespace: obsidian
+
+api:
+  image:
+    repository: obsidian-api
+    tag: latest
+    pullPolicy: Never
+  replicas: 1
+  port: 8080
+  env:
+    ASPNETCORE_ENVIRONMENT: Production
+    ConnectionStrings__DefaultConnection: "Data Source=/data/obsidian.db"
+    AzureAd__Instance: "https://login.microsoftonline.com/"
+    AzureAd__TenantId: "consumers"
+    AzureAd__Audience: ""
+    AzureAd__ClientId: ""
+    CORS__AllowedOrigins__0: "http://obsidian.local"
+    OTEL_SERVICE_NAME: obsidian-api
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+web:
+  image:
+    repository: obsidian-web
+    tag: latest
+    pullPolicy: Never
+  replicas: 1
+  port: 80
+  env:
+    API_URL: "http://api.obsidian.local"
+
+database:
+  type: sqlite
+  sqlite:
+    pvc:
+      size: 1Gi
+      storageClass: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$arg_id"
+  hosts:
+    api: api.obsidian.local
+    web: obsidian.local
