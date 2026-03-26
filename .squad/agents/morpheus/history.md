@@ -66,6 +66,34 @@
 - Fires `PlayerStateChanged` events for SignalR broadcast
 - UdpProxy kept separate — not needed for log-based tracking
 
+### 2026-03-26 — .NET Aspire AppHost and ServiceDefaults
+
+**Task:** Add .NET Aspire orchestration projects to the Obsidian solution.
+
+**Implementation:**
+- Created `Obsidian.ServiceDefaults` at `source\Obsidian.ServiceDefaults\`
+  - Provides `AddServiceDefaults()` and `MapDefaultEndpoints()` extensions
+  - OpenTelemetry logging, metrics, tracing with OTLP exporter support
+  - Health checks at `/health` and `/alive` endpoints
+  - HTTP client resilience and service discovery
+  - Targets .NET 10.0
+- Created `Obsidian.AppHost` at `source\Obsidian.AppHost\`
+  - Orchestrates Obsidian.Api with SQLite connection string parameter
+  - Does NOT orchestrate Obsidian.Web (pure WASM client-side app)
+  - Configured with `appsettings.json` for connection strings
+  - Targets .NET 10.0
+- Both projects use NuGet packages (Aspire workload is deprecated in .NET 10)
+- Both projects added to `Obsidian.sln`
+- Build succeeds with warnings (OpenTelemetry.Api 1.10.0 vulnerability — can be upgraded later)
+
+**Decision Made:** ADR in `.squad/decisions/inbox/morpheus-aspire-structure.md`
+
+**Key Notes:**
+- Obsidian.Web is pure Blazor WebAssembly — runs entirely in browser, not orchestrated by AppHost
+- For local dev, `dotnet run` in Obsidian.Web separately; it calls API via configured base URL
+- SQLite connection string configured as parameter resource (no native Aspire integration)
+- Removed `IsAspireHost` property to avoid deprecated workload warning
+
 ## Learnings
 
 <!-- Append learnings below -->
@@ -74,3 +102,6 @@
 - `ServerInfo.Status` enum: Stopped, Starting, Running, Stopping, Error
 - `ServerLog.Level` enum: Debug, Info, Warning, Error
 - Authorization uses Azure AD MSAL with roles: SystemAdmin, Admin, User
+- Aspire AppHost orchestrates backend services only; Blazor WASM configured separately via env vars
+- Personal Microsoft accounts (consumers tenant) require ValidateIssuer = false for JWT token validation
+- ServiceDefaults project provides OpenTelemetry and health check infrastructure for all backend services

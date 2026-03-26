@@ -14,12 +14,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Obsidian.DataAccess\Obsidian.DataAccess.csproj" />
     <ProjectReference Include="..\Obsidian.Models\Obsidian.Models.csproj" />
+    <ProjectReference Include="..\Obsidian.ServiceDefaults\Obsidian.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Obsidian\Obsidian.csproj" />
   </ItemGroup>
 

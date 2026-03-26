@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Obsidian.Api\Obsidian.Api.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\Obsidian.ServiceDefaults\Obsidian.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>
