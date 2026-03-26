@@ -176,3 +176,48 @@ Completed comprehensive unit test expansion for RakNetParser. All 101 tests pass
 - `.squad/log/2026-03-26T04-43-00Z-raknet-tests.md` — Detailed session execution log
 
 **Next Steps:** Awaiting coordinator instructions for subsequent work assignments.
+
+### 2026-03-26 - Auth & Admin Role Management Tests
+
+**Task:** Write auth tests for API endpoints and admin role management.
+
+**What I built:**
+- `AdminControllerTests.cs` — 7 tests covering Neo's AdminController
+  - `GetAdminUsers_RequiresSystemAdminRole` — reflection check: class-level [Authorize(Policy="RequireSystemAdmin")]
+  - `GetAdminUsers_ReturnsListFromDb` — in-memory SQLite: populates overrides, calls GetUsers(), asserts returned list
+  - `GrantAdmin_RequiresSystemAdminRole` — reflection check: class-level [Authorize] covers all endpoints
+  - `GrantAdmin_AddsOverrideToDb` — calls AddUser() with valid body, verifies override persisted + GrantedBy set
+  - `RevokeAdmin_RequiresSystemAdminRole` — reflection check (same class attr)
+  - `RevokeAdmin_RemovesOverrideFromDb` — seeds override, calls DeleteUser(), verifies null after removal
+  - `RevokeAdmin_Returns404_WhenNotFound` — calls DeleteUser("nonexistent"), asserts NotFoundObjectResult
+
+- `AdminOverrideClaimsTransformationTests.cs` — 4 tests covering Neo's AdminOverrideClaimsTransformation
+  - `TransformAsync_AddsRoleClaim_WhenUserHasAdminOverride` — override with Role="Admin", asserts IsInRole("Admin")
+  - `TransformAsync_AddsSystemAdminClaim_WhenUserHasSystemAdminOverride` — override with Role="SystemAdmin"
+  - `TransformAsync_DoesNotAddClaim_WhenNoOverrideExists` — no DB entry → Assert.Same(principal, result)
+  - `TransformAsync_ReturnsPrincipalUnchanged_WhenNoOidClaim` — no "oid"/"sub" → Assert.Same(principal, result)
+
+- `AuthorizationTests.cs` — +1 test (only missing test from existing suite)
+  - `SystemAdminPolicy_ShouldDenyUser` — verifies SystemAdmin policy rejects User role
+
+**Test results:**
+- Total: 113 tests (101 prior + 12 new)
+- All tests PASSED ✅
+
+**Testing approach:**
+- Used SQLite in-memory with `SqliteConnection("DataSource=:memory:")` + `EnsureCreated()` for controller and transformation tests — consistent with DataAccessTests.cs pattern
+- Used `IDisposable` pattern for connection/context cleanup per test class
+- Used `DefaultHttpContext` + `ControllerContext` to inject User claims into controller (no NSubstitute needed for HttpContext)
+- Authorization attribute tests use `GetCustomAttributes(typeof(AuthorizeAttribute), true)` reflection — verifies class-level [Authorize] covers all endpoints
+- `Assert.Same` to verify principal reference unchanged when no-op path taken
+
+**Key insights:**
+- Neo's AdminController uses ObsidianDbContext directly (no IAdminService interface) — test against DbContext, not a mock
+- IAdminService.cs stub WAS previously committed on this branch (Trinity added it); restored via `git checkout HEAD` after accidentally deleting it
+- Neo already grouped my test files into his feat(api) commit — commit fceae6f
+- Controller method names differ from task spec: `GetUsers`, `AddUser`, `DeleteUser` (not `GetAdminUsers`/`GrantAdmin`/`RevokeAdmin`)
+- `DeleteUser` returns 204 NoContent (not 200 Ok) on success — test uses `NoContentResult`
+- AdminOverrideClaimsTransformation uses short claim name "oid" (not full URL), falls back to "sub"
+- Roles.cs and Policies.cs duplicated in Obsidian.Models.Authorization (for API use) vs Obsidian.Web.Authorization (for Blazor WASM)
+- 5 of the 6 requested AuthorizationTests extensions already existed with "Should" prefix naming convention
+

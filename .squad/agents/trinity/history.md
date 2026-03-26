@@ -66,7 +66,34 @@ Frontend HTTP services integrated with Neo's backend API. System ready for end-t
 - Registered `IServerPlayerService` → `HttpServerPlayerService` in `Program.cs`
 - `Obsidian.Models` project reference already existed in `Obsidian.Web.csproj`
 
-**Build:** Solution builds successfully with 0 errors (6 pre-existing warnings, none new).
+**Build:** Solution builds 0 errors / 0 new warnings.
+
+
+
+### 2026-07-14: Login UI + Admin User Management Page
+
+**What already existed (no changes needed):**
+- `Authentication.razor` — full MSAL RemoteAuthenticatorView with UX messages
+- `LoginDisplay.razor` — AuthorizeView with role display (updated badges below)
+- `RedirectToLogin.razor` — NavigateToLogin helper
+- `App.razor` — already wrapped in CascadingAuthenticationState + AuthorizeRouteView
+- `MainLayout.razor` — already includes `<LoginDisplay />`
+- `Servers.razor` / `ServerDetail.razor` — already have `[Authorize(Policy = Policies.RequireUser)]` + AdminView buttons
+
+**New files created:**
+- `source/Obsidian.Web/Services/IAdminService.cs` — `GetAdminUsersAsync / GrantAdminAsync / RevokeAdminAsync`
+- `source/Obsidian.Web/Services/HttpAdminService.cs` — HTTP impl calling `/api/admin/users`
+- `source/Obsidian.Web/Pages/AdminUsers.razor` — SystemAdmin-only page at `/admin/users`; table with grant form + per-row revoke
+
+**Modified files:**
+- `LoginDisplay.razor` — replaced custom CSS role classes with Bootstrap badges (`bg-danger` SystemAdmin, `bg-primary` Admin, `bg-secondary` User)
+- `NavMenu.razor` — added Admin nav link wrapped in `<AuthorizeView Policy="@Policies.RequireSystemAdmin">`
+- `_Imports.razor` — added `@using Obsidian.Web.Authorization` globally
+- `Program.cs` — switched all HTTP services from bare `AddScoped<HttpClient>` to typed MSAL-authorized clients via `AddHttpClient<T>().AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>()`
+- `Obsidian.Web.csproj` — added `Microsoft.Extensions.Http 10.0.0` (required for `AddHttpClient`)
+
+**Build:** Solution builds with 0 errors.
+
 
 
 
