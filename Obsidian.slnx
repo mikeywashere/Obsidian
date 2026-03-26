@@ -1,0 +1,26 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/build/">
+    <File Path=".gitignore" />
+    <File Path="package-lock.json" />
+    <File Path="package.json" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/github/">
+    <File Path=".github/workflows/dotnet.yml" />
+  </Folder>
+  <Folder Name="/source/">
+    <Project Path="source/Obsidian.Api/Obsidian.Api.csproj" />
+    <Project Path="source/Obsidian.AppHost/Obsidian.AppHost.csproj" />
+    <Project Path="source/Obsidian.DataAccess/Obsidian.DataAccess.csproj" />
+    <Project Path="source/Obsidian.Models/Obsidian.Models.csproj" />
+    <Project Path="source/Obsidian.ServiceDefaults/Obsidian.ServiceDefaults.csproj" />
+    <Project Path="source/Obsidian.Web/Obsidian.Web.csproj" />
+  </Folder>
+  <Project Path="source/Obsidian.UnitTests/Obsidian.UnitTests.csproj" />
+  <Project Path="source/Obsidian/Obsidian.csproj" />
+</Solution>
