@@ -1,0 +1,18 @@
+{{- if eq .Values.database.type "sqlite" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: obsidian-db-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "obsidian.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.database.sqlite.pvc.size }}
+  {{- if .Values.database.sqlite.pvc.storageClass }}
+  storageClassName: {{ .Values.database.sqlite.pvc.storageClass }}
+  {{- end }}
+{{- end }}

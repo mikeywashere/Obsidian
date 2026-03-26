@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian-web
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "obsidian.labels" . | nindent 4 }}
+    app: obsidian-web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      app: obsidian-web
+  template:
+    metadata:
+      labels:
+        app: obsidian-web
+    spec:
+      containers:
+        - name: obsidian-web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.web.port }}
+          env:
+            - name: API_URL
+              value: {{ .Values.web.env.API_URL | quote }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.web.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.web.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Visual Studio / Rider
+.vs
+.idea
+*.user
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Test results
+**/TestResults/
+
+# Local dev
+**/*.db
+**/*.db-shm
+**/*.db-wal
+*.env
+.env.*
+
+# Squad agents (not needed in container)
+.squad/
